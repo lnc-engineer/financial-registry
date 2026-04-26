@@ -14,8 +14,11 @@ func main() {
 		return
 	}
 
-	input := os.Args[1]
+	fmt.Println("Number of inputs:", len(os.Args)-1)
 
-	fmt.Println("Processing file:", input)
+	for i := 1; i < len(os.Args); i++ {
+
+		fmt.Println("Processing file:", os.Args[i])
+	}
+
 }
-
