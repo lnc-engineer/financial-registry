@@ -35,6 +35,11 @@ if err != nil {
 fmt.Println(string(data))
 
 
+If no error occurs, the program prints the contents of the file.
+
+The file is first read as bytes and then converted to a string before printing.
+
+
 System connection
 this is the ingestion layer of the registry
 The system can now:
