@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 )
 
 func main() {
 	fmt.Println("Ingestion Processor Started")
 
-	if len(os.Args) <2 {
+	if len(os.Args) < 2 {
 		fmt.Println("No input file provided")
 		return
 	}
@@ -24,7 +25,19 @@ func main() {
 		}
 
 		fmt.Println("Processing file:", file)
-		fmt.Println(string(data))
+		
+		content := string(data)
+
+		//split into lines
+		lines :=strings.Split(content, "\n")
+
+		for _, line := range lines {
+			if line == "" {
+				continue
+			}
+
+			fmt.Println("Record:", line)
+		}
 	}
 
 }
