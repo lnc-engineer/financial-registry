@@ -4,8 +4,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
 )
+
+type Record struct {
+	Name string
+	Age  string
+	Role string
+}
 
 func main() {
 	fmt.Println("Ingestion Processor Started")
@@ -25,19 +30,31 @@ func main() {
 		}
 
 		fmt.Println("Processing file:", file)
-		
+
 		content := string(data)
 
-		//split into lines
-		lines :=strings.Split(content, "\n")
+		// Split into lines
+		lines := strings.Split(content, "\n")
 
 		for _, line := range lines {
 			if line == "" {
 				continue
 			}
 
-			fmt.Println("Record:", line)
+			fields := strings.Split(line, ",")
+
+			if len(fields) != 3 {
+				fmt.Println("Skipping invalid record:", line)
+				continue
+			}
+
+			record := Record{
+				Name: strings.TrimSpace(fields[0]),
+				Age:  strings.TrimSpace(fields[1]),
+				Role: strings.TrimSpace(fields[2]),
+			}
+
+			fmt.Printf("Parsed Record: %+v\n", record)
 		}
 	}
-
 }

@@ -1,5 +1,6 @@
-transaction1
+john, 25, engineer
+sarah, 30, manager
 
-transaction2
+invalid, line
 
-transaction3
+
