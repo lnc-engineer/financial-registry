@@ -5,11 +5,53 @@ import (
 	"os"
 	"strings"
 )
+// Generic structure
+type RawRecord struct {
+	Raw string // original line
+	Fields []string // split parts
+}
 
+// Final structured record
 type Record struct {
 	Name string
-	Age  string
+	Age string
 	Role string
+}
+
+// Convert lines -> RawRecord
+func parseLines(lines [] string) []RawRecord {
+	records := make([]RawRecord, 0)
+
+	for _, line := range lines {
+
+		// ignore empty lines
+		if strings.TrimSpace(line)  == ""  {
+			continue
+		}
+
+		record := RawRecord {
+			Raw:  line,
+			Fields: strings.Split(line, ","),
+		}
+
+		records = append(records, record)
+	}
+
+	return records
+}
+
+// Convert RawRecord -> Record
+func toRecord(r RawRecord) (Record, bool) {
+
+	if len(r.Fields) != 3 {
+		return Record{}, false
+	}
+
+	return Record{
+		Name: strings.TrimSpace(r.Fields[0]),
+		Age: strings.TrimSpace(r.Fields[1]),
+		Role: strings.TrimSpace(r.Fields[2]),
+	}, true
 }
 
 func main() {
@@ -31,27 +73,18 @@ func main() {
 
 		fmt.Println("Processing file:", file)
 
-		content := string(data)
+		lines := strings.Split(string(data), "\n")
 
-		// Split into lines
-		lines := strings.Split(content, "\n")
+		// Structuring layer
+		rawRecords := parseLines(lines)
 
-		for _, line := range lines {
-			if line == "" {
+		for index, raw := range rawRecords {
+			record, ok := toRecord(raw)
+		
+
+			if !ok {
+				fmt.Printf("Skipping invalid record (line %d): %s\n", index+1, raw.Raw)
 				continue
-			}
-
-			fields := strings.Split(line, ",")
-
-			if len(fields) != 3 {
-				fmt.Println("Skipping invalid record:", line)
-				continue
-			}
-
-			record := Record{
-				Name: strings.TrimSpace(fields[0]),
-				Age:  strings.TrimSpace(fields[1]),
-				Role: strings.TrimSpace(fields[2]),
 			}
 
 			fmt.Printf("Parsed Record: %+v\n", record)
