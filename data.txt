@@ -1,6 +1,4 @@
 john, 25, engineer
 sarah, 30, manager
-
-invalid, line
-
+bad, abc, test
 

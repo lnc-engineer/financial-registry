@@ -3,35 +3,37 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
+
 // Generic structure
 type RawRecord struct {
-	Raw string // original line
+	Raw    string   // original line
 	Fields []string // split parts
 }
 
 // Final structured record
 type Record struct {
 	Name string
-	Age string
+	Age  int
 	Role string
 }
 
 // Convert lines -> RawRecord
-func parseLines(lines [] string) []RawRecord {
+func parseLines(lines []string) []RawRecord {
 	records := make([]RawRecord, 0)
 
 	for _, line := range lines {
 
 		// ignore empty lines
-		if strings.TrimSpace(line)  == ""  {
+		if strings.TrimSpace(line) == "" {
 			continue
 		}
 
-		record := RawRecord {
-			Raw:  line,
-			Fields: strings.Split(line, ","),
+		record := RawRecord{
+			Raw:    line,
+			Fields: strings.Split(strings.TrimSpace(line), ","),
 		}
 
 		records = append(records, record)
@@ -47,9 +49,15 @@ func toRecord(r RawRecord) (Record, bool) {
 		return Record{}, false
 	}
 
+	// convert age to int
+	age, err := strconv.Atoi(strings.TrimSpace(r.Fields[1]))
+	if err != nil {
+		return Record{}, false
+	}
+
 	return Record{
 		Name: strings.TrimSpace(r.Fields[0]),
-		Age: strings.TrimSpace(r.Fields[1]),
+		Age:  age,
 		Role: strings.TrimSpace(r.Fields[2]),
 	}, true
 }
@@ -80,7 +88,6 @@ func main() {
 
 		for index, raw := range rawRecords {
 			record, ok := toRecord(raw)
-		
 
 			if !ok {
 				fmt.Printf("Skipping invalid record (line %d): %s\n", index+1, raw.Raw)
