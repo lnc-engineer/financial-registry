@@ -43,23 +43,23 @@ func parseLines(lines []string) []RawRecord {
 }
 
 // Convert RawRecord -> Record
-func toRecord(r RawRecord) (Record, bool) {
+func toRecord(r RawRecord) (Record, error) {
 
 	if len(r.Fields) != 3 {
-		return Record{}, false
+		return Record{}, fmt.Errorf("invalid field count: expected 3")
 	}
 
 	// convert age to int
 	age, err := strconv.Atoi(strings.TrimSpace(r.Fields[1]))
 	if err != nil {
-		return Record{}, false
+		return Record{}, fmt.Errorf("invalid age")
 	}
 
 	return Record{
 		Name: strings.TrimSpace(r.Fields[0]),
 		Age:  age,
 		Role: strings.TrimSpace(r.Fields[2]),
-	}, true
+	}, nil
 }
 
 func main() {
@@ -87,10 +87,16 @@ func main() {
 		rawRecords := parseLines(lines)
 
 		for index, raw := range rawRecords {
-			record, ok := toRecord(raw)
+			record, err := toRecord(raw)
 
-			if !ok {
-				fmt.Printf("Skipping invalid record (line %d): %s\n", index+1, raw.Raw)
+			if err != nil {
+
+				if err.Error() == "invalid age" {
+					fmt.Printf("Invalid age at line %d: %s\n", index+1, raw.Raw)
+				} else {
+					fmt.Printf("Skipping invalid record (line %d): %s\n", index+1, raw.Raw)
+				}
+				
 				continue
 			}
 
