@@ -85,6 +85,8 @@ func main() {
 
 		// Structuring layer
 		rawRecords := parseLines(lines)
+		var validRecords []Record
+		var errors []string
 
 		for index, raw := range rawRecords {
 			record, err := toRecord(raw)
@@ -92,15 +94,31 @@ func main() {
 			if err != nil {
 
 				if err.Error() == "invalid age" {
-					fmt.Printf("Invalid age at line %d: %s\n", index+1, raw.Raw)
+					errors = append(errors,
+						fmt.Sprintf("Invalid age at line %d: %s", index+1, raw.Raw))
 				} else {
-					fmt.Printf("Skipping invalid record (line %d): %s\n", index+1, raw.Raw)
+					errors = append(errors,
+						fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 				}
-				
+
 				continue
 			}
 
-			fmt.Printf("Parsed Record: %+v\n", record)
+			validRecords = append(validRecords, record)
+
+		}
+		fmt.Println("\n--- Processing Summary ---")
+		fmt.Printf("Total valid records: %d\n", len(validRecords))
+		fmt.Printf("Total errors: %d\n\n", len(errors))
+
+		fmt.Println("Valid Records:")
+		for _, r := range validRecords {
+			fmt.Printf("%+v\n", r)
+		}
+
+		fmt.Println("\nErrors:")
+		for _, e := range errors {
+			fmt.Println(e)
 		}
 	}
 }
