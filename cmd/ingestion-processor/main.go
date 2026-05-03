@@ -32,7 +32,7 @@ func parseLines(lines []string) []RawRecord {
 		}
 
 		record := RawRecord{
-			Raw:    line,
+			Raw:    strings.TrimSpace(line),
 			Fields: strings.Split(strings.TrimSpace(line), ","),
 		}
 
@@ -67,7 +67,7 @@ func processRecords(lines []string) ([]Record, []string) {
 	rawRecords := parseLines(lines)
 
 	var validRecords []Record
-	var errors []string
+	var errorMessages []string
 
 	for index, raw := range rawRecords {
 		record, err := toRecord(raw)
@@ -75,10 +75,10 @@ func processRecords(lines []string) ([]Record, []string) {
 		if err != nil {
 
 			if err.Error() == "invalid age" {
-				errors = append(errors,
+				errorMessages = append(errorMessages,
 					fmt.Sprintf("Invalid age at line %d: %s", index+1, raw.Raw))
 			} else {
-				errors = append(errors,
+				errorMessages = append(errorMessages,
 					fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 			}
 
@@ -88,7 +88,7 @@ func processRecords(lines []string) ([]Record, []string) {
 		validRecords = append(validRecords, record)
 	}
 
-	return validRecords, errors
+	return validRecords, errorMessages
 }
 
 func main() {
@@ -111,7 +111,6 @@ func main() {
 		fmt.Println("Processing file:", file)
 
 		lines := strings.Split(string(data), "\n")
-
 
 		validRecords, errors := processRecords(lines)
 
