@@ -62,6 +62,35 @@ func toRecord(r RawRecord) (Record, error) {
 	}, nil
 }
 
+func processRecords(lines []string) ([]Record, []string) {
+
+	rawRecords := parseLines(lines)
+
+	var validRecords []Record
+	var errors []string
+
+	for index, raw := range rawRecords {
+		record, err := toRecord(raw)
+
+		if err != nil {
+
+			if err.Error() == "invalid age" {
+				errors = append(errors,
+					fmt.Sprintf("Invalid age at line %d: %s", index+1, raw.Raw))
+			} else {
+				errors = append(errors,
+					fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
+			}
+
+			continue
+		}
+
+		validRecords = append(validRecords, record)
+	}
+
+	return validRecords, errors
+}
+
 func main() {
 	fmt.Println("Ingestion Processor Started")
 
@@ -83,30 +112,9 @@ func main() {
 
 		lines := strings.Split(string(data), "\n")
 
-		// Structuring layer
-		rawRecords := parseLines(lines)
-		var validRecords []Record
-		var errors []string
 
-		for index, raw := range rawRecords {
-			record, err := toRecord(raw)
+		validRecords, errors := processRecords(lines)
 
-			if err != nil {
-
-				if err.Error() == "invalid age" {
-					errors = append(errors,
-						fmt.Sprintf("Invalid age at line %d: %s", index+1, raw.Raw))
-				} else {
-					errors = append(errors,
-						fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
-				}
-
-				continue
-			}
-
-			validRecords = append(validRecords, record)
-
-		}
 		fmt.Println("\n--- Processing Summary ---")
 		fmt.Printf("Total valid records: %d\n", len(validRecords))
 		fmt.Printf("Total errors: %d\n\n", len(errors))
