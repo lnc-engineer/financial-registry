@@ -1,0 +1,3 @@
+- Continue learning plan
+- Move to Session 11 (combined JSON output)
+- Review pipeline: parsing → validation → processing → JSON
