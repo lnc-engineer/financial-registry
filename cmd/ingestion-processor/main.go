@@ -124,6 +124,7 @@ func main() {
 			fmt.Printf("%+v\n", r)
 		}
 
+		//JSON for valid records
 		jsonData, err := json.MarshalIndent(validRecords, "", "  ")
 		if err != nil {
 			fmt.Println("Error converting to JSON:", err)
@@ -133,5 +134,15 @@ func main() {
 
 		fmt.Println("\nValid Records (JSON):")
 		fmt.Println(string(jsonData))
+
+		//JSON for errors
+		errorsJSON, err := json.MarshalIndent(errors, "", "  ")
+		if err != nil {
+			fmt.Println("Error converting errors to JSON:", err)
+			return
+		}
+
+		fmt.Println("\nErrors (JSON):")
+		fmt.Println(string(errorsJSON))
 	}
 }
