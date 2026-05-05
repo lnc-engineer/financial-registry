@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"encoding/json"
 )
 
 // Generic structure
@@ -123,9 +124,14 @@ func main() {
 			fmt.Printf("%+v\n", r)
 		}
 
-		fmt.Println("\nErrors:")
-		for _, e := range errors {
-			fmt.Println(e)
+		jsonData, err := json.MarshalIndent(validRecords, "", "  ")
+		if err != nil {
+			fmt.Println("Error converting to JSON:", err)
+			return
+
 		}
+
+		fmt.Println("\nValid Records (JSON):")
+		fmt.Println(string(jsonData))
 	}
 }
