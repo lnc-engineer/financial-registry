@@ -129,10 +129,6 @@ func main() {
 		fmt.Printf("Total valid records: %d\n", len(validRecords))
 		fmt.Printf("Total errors: %d\n\n", len(errors))
 
-		fmt.Println("Valid Records:")
-		for _, r := range validRecords {
-			fmt.Printf("%+v\n", r)
-		}
 
 		jsonData, err := json.MarshalIndent(response, "", "  ")
 		if err != nil {
