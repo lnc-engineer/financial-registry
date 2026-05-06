@@ -92,6 +92,11 @@ func processRecords(lines []string) ([]Record, []string) {
 	return validRecords, errorMessages
 }
 
+type Response struct {
+	Records []Record `json:"records"`
+	Errors []string `json:"errors"`
+}
+
 func main() {
 	fmt.Println("Ingestion Processor Started")
 
@@ -115,6 +120,11 @@ func main() {
 
 		validRecords, errors := processRecords(lines)
 
+		response := Response{
+			Records: validRecords,
+			Errors: errors,
+		}
+
 		fmt.Println("\n--- Processing Summary ---")
 		fmt.Printf("Total valid records: %d\n", len(validRecords))
 		fmt.Printf("Total errors: %d\n\n", len(errors))
@@ -124,25 +134,14 @@ func main() {
 			fmt.Printf("%+v\n", r)
 		}
 
-		//JSON for valid records
-		jsonData, err := json.MarshalIndent(validRecords, "", "  ")
+		jsonData, err := json.MarshalIndent(response, "", "  ")
 		if err != nil {
 			fmt.Println("Error converting to JSON:", err)
 			return
-
 		}
 
-		fmt.Println("\nValid Records (JSON):")
+		fmt.Println("\nFinal Output (JSON):")
 		fmt.Println(string(jsonData))
-
-		//JSON for errors
-		errorsJSON, err := json.MarshalIndent(errors, "", "  ")
-		if err != nil {
-			fmt.Println("Error converting errors to JSON:", err)
-			return
-		}
-
-		fmt.Println("\nErrors (JSON):")
-		fmt.Println(string(errorsJSON))
+		
 	}
 }
