@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"encoding/json"
+	"net/http"
 )
 
 // Generic structure
@@ -97,7 +97,43 @@ type Response struct {
 	Errors []string `json:"errors"`
 }
 
+func processHandler(w http.ResponseWriter, r *http.Request)  {
+
+	lines := []string{
+		"john,25,engineer",
+		"bad,abc,test",
+		"sarah,30,manager",
+	}
+
+	validRecords, errors := processRecords(lines)
+
+	response := Response{
+		Records: validRecords,
+		Errors: errors,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	jsonData, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		http.Error(w, "Error creating JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
+}
+
 func main() {
+
+	http.HandleFunc("/process", processHandler)
+
+	fmt.Println("Server started on :8080")
+
+	http.ListenAndServe(":8080", nil)
+}
+
+
+/*func main() {
 	fmt.Println("Ingestion Processor Started")
 
 	if len(os.Args) < 2 {
@@ -140,4 +176,4 @@ func main() {
 		fmt.Println(string(jsonData))
 		
 	}
-}
+}*/
