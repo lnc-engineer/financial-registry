@@ -6,6 +6,7 @@ import (
 	"strings"
 	"encoding/json"
 	"net/http"
+	"io"
 )
 
 // Generic structure
@@ -97,13 +98,21 @@ type Response struct {
 	Errors []string `json:"errors"`
 }
 
+
 func processHandler(w http.ResponseWriter, r *http.Request)  {
 
-	lines := []string{
-		"john,25,engineer",
-		"bad,abc,test",
-		"sarah,30,manager",
+	if r.Method != http.MethodPost {
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	return
 	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	lines := strings.Split(string(body), "\n")
 
 	validRecords, errors := processRecords(lines)
 
