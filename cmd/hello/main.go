@@ -3,6 +3,6 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println("Financail Systems Registry - Initialised")
+	fmt.Println("Financial Systems Registry - Initialised")
 
 }
