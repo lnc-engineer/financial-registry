@@ -93,12 +93,13 @@ func processRecords(lines []string) ([]Record, []string) {
 }
 
 type Response struct {
+	Success bool `json:"success"`
 	Records []Record `json:"records"`
 	Errors []string `json:"errors"`
 }
 
 type ProcessRequest struct {
-	Lines []string `json: "lines"`
+	Lines []string `json:"lines"`
 }
 
 func processHandler(w http.ResponseWriter, r *http.Request)  {
@@ -121,11 +122,18 @@ func processHandler(w http.ResponseWriter, r *http.Request)  {
 	validRecords, errors := processRecords(lines)
 
 	response := Response{
+		Success: len(errors) == 0,
 		Records: validRecords,
-		Errors: errors,
+		Errors:  errors,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	status := http.StatusOK
+	if len(errors) > 0 {
+		status = http.StatusBadRequest
+	}
 
 	jsonData, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
@@ -133,8 +141,11 @@ func processHandler(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
+	w.WriteHeader(status)
 	w.Write(jsonData)
 }
+
+
 
 func main() {
 
@@ -144,49 +155,3 @@ func main() {
 
 	http.ListenAndServe(":8080", nil)
 }
-
-
-/*func main() {
-	fmt.Println("Ingestion Processor Started")
-
-	if len(os.Args) < 2 {
-		fmt.Println("No input file provided")
-		return
-	}
-
-	for i := 1; i < len(os.Args); i++ {
-		file := os.Args[i]
-
-		data, err := os.ReadFile(file)
-		if err != nil {
-			fmt.Println("Error reading file:", err)
-			continue
-		}
-
-		fmt.Println("Processing file:", file)
-
-		lines := strings.Split(string(data), "\n")
-
-		validRecords, errors := processRecords(lines)
-
-		response := Response{
-			Records: validRecords,
-			Errors: errors,
-		}
-
-		fmt.Println("\n--- Processing Summary ---")
-		fmt.Printf("Total valid records: %d\n", len(validRecords))
-		fmt.Printf("Total errors: %d\n\n", len(errors))
-
-
-		jsonData, err := json.MarshalIndent(response, "", "  ")
-		if err != nil {
-			fmt.Println("Error converting to JSON:", err)
-			return
-		}
-
-		fmt.Println("\nFinal Output (JSON):")
-		fmt.Println(string(jsonData))
-		
-	}
-}*/
