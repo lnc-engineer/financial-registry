@@ -33,3 +33,9 @@ HTTP transport layer + application response layer
 system now communicates processing success/failure professionally
 
 foundation for production-grade APIs
+
+
+
+
+malformed client requests can trigger valid server-side
+HTTP 400 Bad Request responses
