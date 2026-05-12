@@ -44,3 +44,36 @@ This pipeline follows a simplified ETL pattern:
 - Transform (parsing + validation)
 - Load (JSON output)
 
+## Architecture
+
+The ingestion processor follows a layered backend pipeline:
+
+File Input / HTTP Request
+↓
+Request Parsing
+↓
+Validation
+↓
+Record Transformation
+↓
+Error Aggregation
+↓
+Structured JSON Response
+
+Current project structure:
+
+cmd/ingestion-processor/
+├── main.go
+├── handler.go
+├── processor.go
+└── models.go
+
+Key concepts implemented:
+
+- JSON APIs
+- HTTP status codes
+- request validation
+- structured responses
+- separation of concerns
+- multi-file architecture
+- automated testing
