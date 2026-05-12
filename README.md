@@ -1,3 +1,9 @@
+# Financial Registry
+
+A Go-based ingestion and validation API designed to process
+structured registry data through a layered backend pipeline.
+
+
 ## 🧠 Data Processing Pipeline
 File (data.txt)
 ↓
@@ -77,3 +83,78 @@ Key concepts implemented:
 - separation of concerns
 - multi-file architecture
 - automated testing
+
+## Current Features
+
+- Parse comma-separated records
+- Validate structured input
+- Detect invalid ages and malformed records
+- Aggregate processing errors
+- Return structured JSON responses
+- Expose processing through HTTP API
+- Handle HTTP status codes correctly
+- Pretty-print JSON responses
+- Multi-file backend architecture
+- Unit testing with Go testing package
+
+---
+
+## Run The API
+
+Start server:
+
+```bash
+go run ./cmd/ingestion-processor
+```
+
+Server runs on:
+
+```text
+http://localhost:8080
+```
+
+---
+
+## Example Request
+
+```bash
+curl -i -X POST http://localhost:8080/process \
+-H "Content-Type: application/json" \
+-d '{
+  "lines": [
+    "john,25,engineer"
+  ]
+}'
+```
+
+---
+
+## Example Success Response
+
+```json
+{
+  "success": true,
+  "records": [
+    {
+      "Name": "john",
+      "Age": 25,
+      "Role": "engineer"
+    }
+  ],
+  "errors": null
+}
+```
+
+---
+
+## Example Error Response
+
+```json
+{
+  "success": false,
+  "records": null,
+  "errors": [
+    "Invalid age at line 1: bad,abc,test"
+  ]
+}
+```
