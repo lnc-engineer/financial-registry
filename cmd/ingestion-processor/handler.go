@@ -45,3 +45,15 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(status)
 	w.Write(jsonData)
 }
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	response := map[string]string{
+		"status": "ok",
+	}
+
+	jsonData, _ := json.MarshalIndent(response, "", "  ")
+	w.Write(jsonData)
+}
