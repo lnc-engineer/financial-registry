@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -56,4 +57,14 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonData, _ := json.MarshalIndent(response, "", "  ")
 	w.Write(jsonData)
+}
+
+func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		fmt.Printf("[%s] %s\n", r.Method, r.URL.Path)
+
+		next(w, r)
+	}
 }
