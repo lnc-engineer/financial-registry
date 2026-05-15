@@ -8,8 +8,10 @@ import (
 
 func main() {
 
+	http.HandleFunc("/", loggingMiddleware(homeHandler))
+
 	http.HandleFunc("/process", loggingMiddleware(processHandler))
-	
+
 	http.HandleFunc("/health", loggingMiddleware(healthHandler))
 
 	fmt.Println("Server started on :8080")

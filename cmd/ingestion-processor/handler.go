@@ -59,6 +59,24 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	response := map[string]string{
+		"service": "financial-registry",
+		"status":  "running",
+	}
+
+	jsonData, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		http.Error(w, "Error creating JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
+}
+
 func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
