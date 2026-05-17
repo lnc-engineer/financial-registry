@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var requestCount int
+
 func generateRequestID() string {
 	return "REQ-" + strconv.Itoa(rand.Intn(100000))
 }
@@ -87,9 +89,17 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		requestCount++
+
 		reqID := generateRequestID()
 
-		fmt.Printf("[%s] [%s] %s\n", reqID, r.Method, r.URL.Path)
+		fmt.Printf(
+			"[%s] [%s] %s | Total Requests: %d\n",
+			reqID,
+			r.Method,
+			r.URL.Path,
+			requestCount,
+		)
 
 		next(w, r)
 	}
