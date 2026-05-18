@@ -29,19 +29,14 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validRecords, errors := processRecords(request.Lines)
-
-	response := Response{
-		Success: len(errors) == 0,
-		Records: validRecords,
-		Errors:  errors,
-	}
+	lines := request.Lines
+	response := ProcessIngestion(lines)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	status := http.StatusOK
-	if len(errors) > 0 {
+	if !response.Success {
 		status = http.StatusBadRequest
 	}
 
