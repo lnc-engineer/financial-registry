@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"math/rand"
 	"strconv"
+	"time"
 )
 
 var requestCount int
@@ -88,8 +89,11 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		reqID := generateRequestID()
 
+		timestamp := time.Now().Format(time.RFC3339)
+
 		fmt.Printf(
-			"[%s] [%s] %s | Total Requests: %d\n",
+			"[%s] [%s] [%s] %s | Total Requests: %d\n",
+			timestamp,
 			reqID,
 			r.Method,
 			r.URL.Path,
