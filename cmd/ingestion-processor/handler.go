@@ -85,21 +85,24 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		start := time.Now()  // start timer
+
 		requestCount++
 
 		reqID := generateRequestID()
 
-		timestamp := time.Now().Format(time.RFC3339)
+		next(w,r)
+
+		duration := time.Since(start)  // calculate duration
 
 		fmt.Printf(
-			"[%s] [%s] [%s] %s | Total Requests: %d\n",
-			timestamp,
+			"[%s] [%s] %s | %v | Total Requests: %d\n",
 			reqID,
 			r.Method,
 			r.URL.Path,
+			duration,
 			requestCount,
 		)
 
-		next(w, r)
 	}
 }
