@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
 var requestCount int
 
 func generateRequestID() string {
@@ -91,15 +101,21 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		reqID := generateRequestID()
 
-		next(w,r)
+		rw :=&responseWriter{
+			ResponseWriter: w,
+			statusCode:		http.StatusOK,
+		}
+
+		next(rw,r)
 
 		duration := time.Since(start)  // calculate duration
 
 		fmt.Printf(
-			"[%s] [%s] %s | %v | Total Requests: %d\n",
+			"[%s] [%s] %s | %d | %v | Total Requests: %d\n",
 			reqID,
 			r.Method,
 			r.URL.Path,
+			rw.statusCode,
 			duration,
 			requestCount,
 		)
