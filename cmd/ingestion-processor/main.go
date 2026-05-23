@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
+	"github.com/lnc-engineer/financial-registry/internal/middleware"
 	"net/http"
 )
-
 
 func main() {
 
 	http.HandleFunc("/", loggingMiddleware(homeHandler))
 
-	http.HandleFunc("/process", loggingMiddleware(processHandler))
+	http.Handle("/process", middleware.LoggingMiddleware(http.HandlerFunc(processHandler)))
 
 	http.HandleFunc("/health", loggingMiddleware(healthHandler))
 

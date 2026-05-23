@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -95,20 +95,20 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		start := time.Now()  // start timer
+		start := time.Now() // start timer
 
 		requestCount++
 
 		reqID := generateRequestID()
 
-		rw :=&responseWriter{
+		rw := &responseWriter{
 			ResponseWriter: w,
-			statusCode:		http.StatusOK,
+			statusCode:     http.StatusOK,
 		}
 
-		next(rw,r)
+		next(rw, r)
 
-		duration := time.Since(start)  // calculate duration
+		duration := time.Since(start) // calculate duration
 
 		fmt.Printf(
 			"[%s] [%s] %s | %d | %v | Total Requests: %d\n",

@@ -8,9 +8,8 @@ func TestProcessRecords_MixedInput(t *testing.T) {
 		"john,25,engineer",
 		"bad,abc,test",
 		"sarah,30,manager",
-		
 	}
-	
+
 	records, errors := processRecords(lines)
 
 	if len(records) != 2 {
@@ -20,8 +19,8 @@ func TestProcessRecords_MixedInput(t *testing.T) {
 	if len(errors) != 1 {
 		t.Errorf("expected 1 error, got %d", len(errors))
 	}
-	if len(errors) > 0 &&  errors[0] != "Invalid age at line 2: bad,abc,test" {
-		t.Errorf("unexpected error message: %s", errors[0])	
+	if len(errors) > 0 && errors[0] != "Invalid age at line 2: bad,abc,test" {
+		t.Errorf("unexpected error message: %s", errors[0])
 	}
 }
 func TestProcessRecords_InvalidData(t *testing.T) {
@@ -41,4 +40,3 @@ func TestProcessRecords_InvalidData(t *testing.T) {
 		t.Errorf("expected 2 errors, got %d", len(errors))
 	}
 }
-
