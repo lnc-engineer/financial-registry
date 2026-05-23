@@ -22,7 +22,7 @@ Processing Engine
 ↓
 HTTP Response
 
-What we implemented
+What has been implemented
 
 - middleware package introduced
 - logging middleware added
@@ -45,3 +45,11 @@ this is a foundational step toward:
 - audit logging systems
 - financial-grade backend infrastructure
 - AI-native workflow tracking systems
+
+Key ideas
+
+- middleware handles cross-cutting concerns (logging, status tracking, timing)
+- handlers should remain thin and focused on HTTP
+- services coordinate business logic
+- processing layer executes core operations
+- observability is built at middleware level, not inside business logic
