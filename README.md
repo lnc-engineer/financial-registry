@@ -4,7 +4,7 @@ A Go-based ingestion and validation API designed to process
 structured registry data through a layered backend pipeline.
 
 
-## 🧠 Data Processing Pipeline
+## Data Processing Pipeline
 File (data.txt)
 ↓
 Read File (os.ReadFile)

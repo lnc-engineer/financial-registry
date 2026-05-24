@@ -25,10 +25,26 @@ func generateRequestID() string {
 	return "REQ-" + strconv.Itoa(rand.Intn(100000))
 }
 
+
+func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	jsonData, _ := json.MarshalIndent(payload, "", "  ")
+	w.Write(jsonData)
+}
+
+// handlers
+
 func processHandler(w http.ResponseWriter, r *http.Request) {
 
+	defer r.Body.Close()
+
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"method not allowed"},
+		})
 		return
 	}
 
@@ -36,79 +52,86 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"invalid JSON request"},
+		})
 		return
 	}
 
-	lines := request.Lines
-	response := ProcessIngestion(lines)
+	if len(request.Records) == 0 {
+		response := ProcessResponse{
+			Success: false,
+			Records: nil,
+			Errors:  []string{"no records provided"},
+		}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-
-	status := http.StatusOK
-	if !response.Success {
-		status = http.StatusBadRequest
-	}
-
-	jsonData, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		http.Error(w, "Error creating JSON", http.StatusInternalServerError)
+		writeJSON(w, http.StatusBadRequest, response)
 		return
 	}
 
-	w.WriteHeader(status)
-	w.Write(jsonData)
+	// processing logic starts here
+
+	response := ProcessResponse{
+		Success: true,
+		Records: nil,
+		Errors:  nil,
+	}
+
+	writeJSON(w, http.StatusOK, response)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"method not allowed"},
+		})
+		return
+	}
 
 	response := map[string]string{
 		"status": "ok",
 	}
 
-	jsonData, _ := json.MarshalIndent(response, "", "  ")
-	w.Write(jsonData)
+	writeJSON(w, http.StatusOK, response)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
 
 	response := map[string]string{
 		"service": "financial-registry",
 		"status":  "running",
 	}
 
-	jsonData, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		http.Error(w, "Error creating JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(jsonData)
+	writeJSON(w, http.StatusOK, response)
 }
+
+
+// middleware
 
 func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		start := time.Now() // start timer
+		start := time.Now()
 
 		requestCount++
-
 		reqID := generateRequestID()
 
 		rw := &responseWriter{
 			ResponseWriter: w,
-			statusCode:     http.StatusOK,
+			statusCode:     0,
 		}
 
 		next(rw, r)
 
-		duration := time.Since(start) // calculate duration
+		if rw.statusCode == 0 {
+			rw.statusCode = http.StatusOK
+		}
+
+		duration := time.Since(start)
 
 		fmt.Printf(
 			"[%s] [%s] %s | %d | %v | Total Requests: %d\n",
@@ -119,6 +142,5 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			duration,
 			requestCount,
 		)
-
 	}
 }

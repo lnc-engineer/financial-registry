@@ -11,12 +11,12 @@ type Record struct {
 	Role string
 }
 
-type Response struct {
-	Success bool     `json:"success"`
-	Records []Record `json:"records"`
+type ProcessResponse struct {
+	Success bool   	  `json:"success"`
+	Records interface{} `json:"records"`
 	Errors  []string `json:"errors"`
 }
 
 type ProcessRequest struct {
-	Lines []string `json:"lines"`
+	Records []RawRecord `json:"records"`
 }
