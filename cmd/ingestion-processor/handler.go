@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"sync/atomic"
 )
 
 type responseWriter struct {
@@ -19,7 +20,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-var requestCount int
+var requestCount int64
 
 func generateRequestID() string {
 	return "REQ-" + strconv.Itoa(rand.Intn(100000))
@@ -30,7 +31,11 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	jsonData, _ := json.MarshalIndent(payload, "", "  ")
+	jsonData, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		http.Error(w, "JSON encoding error", http.StatusInternalServerError)
+		return
+	}
 	w.Write(jsonData)
 }
 
@@ -62,7 +67,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 	if len(request.Records) == 0 {
 		response := ProcessResponse{
 			Success: false,
-			Records: nil,
+			Records: []Record{},
 			Errors:  []string{"no records provided"},
 		}
 
@@ -74,7 +79,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := ProcessResponse{
 		Success: true,
-		Records: nil,
+		Records: []Record{},
 		Errors:  nil,
 	}
 
@@ -109,6 +114,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
+
 // middleware
 
 func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -117,12 +123,12 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		start := time.Now()
 
-		requestCount++
+		atomic.AddInt64(&requestCount, 1)
 		reqID := generateRequestID()
 
 		rw := &responseWriter{
 			ResponseWriter: w,
-			statusCode:     0,
+			statusCode:     http.StatusOK,
 		}
 
 		next(rw, r)
@@ -140,7 +146,7 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			r.URL.Path,
 			rw.statusCode,
 			duration,
-			requestCount,
+			atomic.LoadInt64(&requestCount),
 		)
 	}
 }
