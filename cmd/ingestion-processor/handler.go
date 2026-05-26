@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 	"sync/atomic"
+	"context"
 )
 
 type responseWriter struct {
@@ -15,15 +16,25 @@ type responseWriter struct {
 	statusCode int
 }
 
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+type ExecutionContext struct {
+	RequestID string
+	StartTime time.Time
 }
+
+type contextKey string
+
+const executionContextKey contextKey = "execution_context"
+
 
 var requestCount int64
 
 func generateRequestID() string {
 	return "REQ-" + strconv.Itoa(rand.Intn(100000))
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
 
 
@@ -39,11 +50,27 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(jsonData)
 }
 
-// handlers
+// service layer
+
+func ProcessRecords(execCtx ExecutionContext, request ProcessRequest) ProcessResponse {
+
+	fmt.Printf(
+		"[%s] Processing %d records\n",
+		execCtx.RequestID,
+		len(request.Records),
+	)
+
+	return ProcessResponse{
+		Success: true,
+		Records: []Record{},
+		Errors:  nil,
+	}
+
+}
+
+//Handler
 
 func processHandler(w http.ResponseWriter, r *http.Request) {
-
-	defer r.Body.Close()
 
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
@@ -52,6 +79,17 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	execCtx, ok := r.Context().Value(executionContextKey).(ExecutionContext)
+	if !ok {
+		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"execution context missing"},
+	})
+	return
+}
+
+	defer r.Body.Close()
 
 	var request ProcessRequest
 
@@ -65,26 +103,20 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(request.Records) == 0 {
-		response := ProcessResponse{
+		writeJSON(w, http.StatusBadRequest, ProcessResponse{
 			Success: false,
 			Records: []Record{},
 			Errors:  []string{"no records provided"},
-		}
-
-		writeJSON(w, http.StatusBadRequest, response)
+		})
 		return
 	}
 
-	// processing logic starts here
-
-	response := ProcessResponse{
-		Success: true,
-		Records: []Record{},
-		Errors:  nil,
-	}
+	response := ProcessRecords(execCtx, request)
 
 	writeJSON(w, http.StatusOK, response)
 }
+
+//other handlers
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -96,23 +128,20 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]string{
+	writeJSON(w, http.StatusOK, map[string]string{
 		"status": "ok",
-	}
+	})
 
-	writeJSON(w, http.StatusOK, response)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 
-	response := map[string]string{
+	writeJSON(w, http.StatusOK, map[string]string{
 		"service": "financial-registry",
 		"status":  "running",
-	}
+	})
 
-	writeJSON(w, http.StatusOK, response)
 }
-
 
 
 // middleware
@@ -124,7 +153,19 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		start := time.Now()
 
 		atomic.AddInt64(&requestCount, 1)
+
 		reqID := generateRequestID()
+
+		execCtx := ExecutionContext{
+		RequestID: reqID,
+		StartTime: start,
+	}
+
+		ctx := context.WithValue(r.Context(), executionContextKey, execCtx)
+
+		r = r.WithContext(ctx)
+
+		w.Header().Set("X-Request-ID", reqID)
 
 		rw := &responseWriter{
 			ResponseWriter: w,
@@ -139,14 +180,16 @@ func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		duration := time.Since(start)
 
-		fmt.Printf(
-			"[%s] [%s] %s | %d | %v | Total Requests: %d\n",
-			reqID,
-			r.Method,
-			r.URL.Path,
-			rw.statusCode,
-			duration,
-			atomic.LoadInt64(&requestCount),
-		)
+
+fmt.Printf(
+	`{"request_id":"%s","method":"%s","path":"%s","status":%d,"duration":"%v","total_requests":%d}`+"\n",
+	reqID,
+	r.Method,
+	r.URL.Path,
+	rw.statusCode,
+	duration,
+	atomic.LoadInt64(&requestCount),
+)
+		
 	}
 }
