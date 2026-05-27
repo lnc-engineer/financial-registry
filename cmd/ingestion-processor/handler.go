@@ -6,9 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
-	"time"
-	"sync/atomic"
-	"context"
+	"github.com/lnc-engineer/financial-registry/internal/execution"
 )
 
 type responseWriter struct {
@@ -16,14 +14,10 @@ type responseWriter struct {
 	statusCode int
 }
 
-type ExecutionContext struct {
-	RequestID string
-	StartTime time.Time
-}
+
 
 type contextKey string
 
-const executionContextKey contextKey = "execution_context"
 
 
 var requestCount int64
@@ -52,7 +46,7 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 
 // service layer
 
-func ProcessRecords(execCtx ExecutionContext, request ProcessRequest) ProcessResponse {
+func ProcessRecords(execCtx execution.ExecutionContext, request ProcessRequest) ProcessResponse {
 
 	fmt.Printf(
 		"[%s] Processing %d records\n",
@@ -80,7 +74,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	execCtx, ok := r.Context().Value(executionContextKey).(ExecutionContext)
+	execCtx, ok := r.Context().Value(execution.ExecutionContextKey).(execution.ExecutionContext)
 	if !ok {
 		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -144,52 +138,3 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// middleware
-
-func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		start := time.Now()
-
-		atomic.AddInt64(&requestCount, 1)
-
-		reqID := generateRequestID()
-
-		execCtx := ExecutionContext{
-		RequestID: reqID,
-		StartTime: start,
-	}
-
-		ctx := context.WithValue(r.Context(), executionContextKey, execCtx)
-
-		r = r.WithContext(ctx)
-
-		w.Header().Set("X-Request-ID", reqID)
-
-		rw := &responseWriter{
-			ResponseWriter: w,
-			statusCode:     http.StatusOK,
-		}
-
-		next(rw, r)
-
-		if rw.statusCode == 0 {
-			rw.statusCode = http.StatusOK
-		}
-
-		duration := time.Since(start)
-
-
-fmt.Printf(
-	`{"request_id":"%s","method":"%s","path":"%s","status":%d,"duration":"%v","total_requests":%d}`+"\n",
-	reqID,
-	r.Method,
-	r.URL.Path,
-	rw.statusCode,
-	duration,
-	atomic.LoadInt64(&requestCount),
-)
-		
-	}
-}

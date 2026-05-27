@@ -2,19 +2,32 @@ package main
 
 import (
 	"fmt"
-	"github.com/lnc-engineer/financial-registry/internal/middleware"
 	"net/http"
+
+	"github.com/lnc-engineer/financial-registry/internal/middleware"
 )
 
 func main() {
 
-	http.HandleFunc("/", loggingMiddleware(homeHandler))
+	http.Handle(
+		"/",
+		middleware.LoggingMiddleware(http.HandlerFunc(homeHandler)),
+	)
 
-	http.Handle("/process", middleware.LoggingMiddleware(http.HandlerFunc(processHandler)))
+	http.Handle(
+		"/health",
+		middleware.LoggingMiddleware(http.HandlerFunc(healthHandler)),
+	)
 
-	http.HandleFunc("/health", loggingMiddleware(healthHandler))
+	http.Handle(
+		"/process",
+		middleware.LoggingMiddleware(http.HandlerFunc(processHandler)),
+	)
 
 	fmt.Println("Server started on :8080")
 
-	http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		fmt.Println("server error:", err)
+	}
 }
