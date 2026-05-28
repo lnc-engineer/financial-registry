@@ -66,6 +66,14 @@ func ProcessRecords(execCtx execution.ExecutionContext, request ProcessRequest) 
 
 func processHandler(w http.ResponseWriter, r *http.Request) {
 
+	ec, ok := execution.FromContext(r.Context())
+	if !ok {
+	http.Error(w, "execution context missing", http.StatusInternalServerError)
+	return
+}
+
+fmt.Println("[PROCESS]", ec.RequestID, ec.StartTime)
+	
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
 			"success": false,

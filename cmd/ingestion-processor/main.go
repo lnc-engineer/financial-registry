@@ -20,9 +20,13 @@ func main() {
 	)
 
 	http.Handle(
-		"/process",
-		middleware.LoggingMiddleware(http.HandlerFunc(processHandler)),
-	)
+	"/process",
+	middleware.ExecutionContextMiddleware(
+		middleware.LoggingMiddleware(
+			http.HandlerFunc(processHandler),
+		),
+	),
+)
 
 	fmt.Println("Server started on :8080")
 

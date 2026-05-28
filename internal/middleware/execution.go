@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,20 +13,23 @@ import (
 func ExecutionContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// Create execution context (value, not pointer)
+		// CREATE execution context
 		execCtx := execution.ExecutionContext{
 			RequestID: uuid.NewString(),
 			StartTime: time.Now(),
+			Metadata:  make(map[string]string),
 		}
 
-		// Inject into request context
+		
+		fmt.Println("[EXECUTION] injected request:", execCtx.RequestID)
+
+		// INJECT into request context
 		ctx := context.WithValue(
 			r.Context(),
 			execution.ExecutionContextKey,
 			execCtx,
 		)
 
-		// Pass request forward with enriched context
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
