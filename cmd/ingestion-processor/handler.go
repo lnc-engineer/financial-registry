@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
-	"strconv"
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 )
 
@@ -14,17 +12,6 @@ type responseWriter struct {
 	statusCode int
 }
 
-
-
-type contextKey string
-
-
-
-var requestCount int64
-
-func generateRequestID() string {
-	return "REQ-" + strconv.Itoa(rand.Intn(100000))
-}
 
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
@@ -48,17 +35,25 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 
 func ProcessRecords(execCtx execution.ExecutionContext, request ProcessRequest) ProcessResponse {
 
+	execution.LogEvent(execCtx, "ingestion_started")
+	
 	fmt.Printf(
 		"[%s] Processing %d records\n",
 		execCtx.RequestID,
 		len(request.Records),
 	)
 
-	return ProcessResponse{
+	execution.LogEvent(execCtx, "records_received")
+
+	response := ProcessResponse{
 		Success: true,
 		Records: []Record{},
 		Errors:  nil,
 	}
+
+	execution.LogEvent(execCtx, "ingestion_completed")
+
+	return response
 
 }
 
@@ -66,13 +61,6 @@ func ProcessRecords(execCtx execution.ExecutionContext, request ProcessRequest) 
 
 func processHandler(w http.ResponseWriter, r *http.Request) {
 
-	ec, ok := execution.FromContext(r.Context())
-	if !ok {
-	http.Error(w, "execution context missing", http.StatusInternalServerError)
-	return
-}
-
-fmt.Println("[PROCESS]", ec.RequestID, ec.StartTime)
 	
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
@@ -82,16 +70,17 @@ fmt.Println("[PROCESS]", ec.RequestID, ec.StartTime)
 		return
 	}
 
-	execCtx, ok := r.Context().Value(execution.ExecutionContextKey).(execution.ExecutionContext)
+	execCtx, ok := execution.FromContext(r.Context())
 	if !ok {
-		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
-			"success": false,
-			"errors":  []string{"execution context missing"},
+	writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		"success": false,
+		"errors":  []string{"execution context missing"},
 	})
 	return
 }
 
 	defer r.Body.Close()
+
 
 	var request ProcessRequest
 
