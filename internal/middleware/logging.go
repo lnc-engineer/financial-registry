@@ -30,10 +30,12 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 		duration := time.Since(start)
 
-		fmt.Println("[REQUEST]")
-		fmt.Println("method =", r.Method)
-		fmt.Println("path =", r.URL.Path)
-		fmt.Println("status =", recorder.StatusCode)
-		fmt.Println("duration =", duration)
+		fmt.Printf(
+			`{"type":"request","method":"%s","path":"%s","status":%d,"duration_us":%d}\n`,
+			r.Method,
+			r.URL.Path,
+			recorder.StatusCode,
+			duration.Microseconds(),
+		)
 	})
 }

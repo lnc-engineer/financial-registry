@@ -6,7 +6,6 @@ import (
 
 func ProcessIngestion(ctx execution.ExecutionContext, records []RawRecord) ProcessResponse {
 
-
 	execution.LogEvent(ctx, "ingestion_started")
 
 	lines := make([]string, 0, len(records))

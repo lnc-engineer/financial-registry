@@ -2,22 +2,24 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 )
+
+// -------------------- RESPONSE WRITER --------------------
 
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
 }
 
-
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
 }
 
+// -------------------- JSON HELPER --------------------
 
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -31,37 +33,10 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(jsonData)
 }
 
-// service layer
-
-func ProcessRecords(execCtx execution.ExecutionContext, request ProcessRequest) ProcessResponse {
-
-	execution.LogEvent(execCtx, "ingestion_started")
-	
-	fmt.Printf(
-		"[%s] Processing %d records\n",
-		execCtx.RequestID,
-		len(request.Records),
-	)
-
-	execution.LogEvent(execCtx, "records_received")
-
-	response := ProcessResponse{
-		Success: true,
-		Records: []Record{},
-		Errors:  nil,
-	}
-
-	execution.LogEvent(execCtx, "ingestion_completed")
-
-	return response
-
-}
-
-//Handler
+// -------------------- HANDLER --------------------
 
 func processHandler(w http.ResponseWriter, r *http.Request) {
 
-	
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
 			"success": false,
@@ -72,15 +47,14 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	execCtx, ok := execution.FromContext(r.Context())
 	if !ok {
-	writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
-		"success": false,
-		"errors":  []string{"execution context missing"},
-	})
-	return
-}
+		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"execution context missing"},
+		})
+		return
+	}
 
 	defer r.Body.Close()
-
 
 	var request ProcessRequest
 
@@ -102,12 +76,10 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := ProcessRecords(execCtx, request)
+	response := ProcessIngestion(execCtx, request.Records)
 
 	writeJSON(w, http.StatusOK, response)
 }
-
-//other handlers
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -122,7 +94,6 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{
 		"status": "ok",
 	})
-
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +102,4 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		"service": "financial-registry",
 		"status":  "running",
 	})
-
 }
-
-
