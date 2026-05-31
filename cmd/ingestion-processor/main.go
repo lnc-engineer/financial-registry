@@ -7,6 +7,8 @@ import (
 	"github.com/lnc-engineer/financial-registry/internal/middleware"
 )
 
+const Version = "0.1.0"
+
 func main() {
 
 	http.Handle(
@@ -20,13 +22,18 @@ func main() {
 	)
 
 	http.Handle(
-	"/process",
-	middleware.ExecutionContextMiddleware(
-		middleware.LoggingMiddleware(
-			http.HandlerFunc(processHandler),
+		"/version",
+		middleware.LoggingMiddleware(http.HandlerFunc(versionHandler)),
+	)
+
+	http.Handle(
+		"/process",
+		middleware.ExecutionContextMiddleware(
+			middleware.LoggingMiddleware(
+				http.HandlerFunc(processHandler),
+			),
 		),
-	),
-)
+	)
 
 	fmt.Println("Server started on :8080")
 

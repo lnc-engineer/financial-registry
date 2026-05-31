@@ -20,7 +20,6 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 			Metadata:  make(map[string]string),
 		}
 
-		
 		fmt.Println("[EXECUTION] injected request:", execCtx.RequestID)
 
 		// INJECT into request context

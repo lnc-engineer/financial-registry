@@ -12,9 +12,9 @@ type Record struct {
 }
 
 type ProcessResponse struct {
-	Success bool   	  `json:"success"`
-	Records []Record  `json:"records"`
-	Errors  []string  `json:"errors"`
+	Success bool     `json:"success"`
+	Records []Record `json:"records"`
+	Errors  []string `json:"errors"`
 }
 
 type ProcessRequest struct {
