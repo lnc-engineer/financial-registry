@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lnc-engineer/financial-registry/internal/execution"
 	"strings"
 )
 
@@ -55,10 +56,14 @@ func processRecords(lines []string) ([]Record, []string) {
 		if err != nil {
 			errorMessages = append(errorMessages,
 				fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
+
+			execution.RecordFailure()
 			continue
 		}
 
 		validRecords = append(validRecords, record)
+
+		execution.RecordSuccess()
 	}
 
 	return validRecords, errorMessages
