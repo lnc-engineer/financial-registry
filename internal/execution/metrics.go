@@ -1,6 +1,9 @@
 package execution
 
-import "sync/atomic"
+import (
+	"fmt"
+	"sync/atomic"
+)
 
 var TotalRequests uint64
 var SuccessfulRequests uint64
@@ -16,4 +19,10 @@ func RecordSuccess() {
 
 func RecordFailure() {
 	atomic.AddUint64(&FailedRequests, 1)
+}
+
+func PrintMetrics() {
+	fmt.Println("TOTAL:", atomic.LoadUint64(&TotalRequests))
+	fmt.Println("SUCCESS:", atomic.LoadUint64(&SuccessfulRequests))
+	fmt.Println("FAILURE:", atomic.LoadUint64(&FailedRequests))
 }

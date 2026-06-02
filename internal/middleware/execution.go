@@ -13,12 +13,14 @@ import (
 func ExecutionContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		start := time.Now()
+
 		execution.RecordRequest()
 
 		// CREATE execution context
 		execCtx := execution.ExecutionContext{
 			RequestID: uuid.NewString(),
-			StartTime: time.Now(),
+			StartTime: start,
 			Metadata:  make(map[string]string),
 		}
 
@@ -32,5 +34,10 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
+
+		// Middleware duration (end-to-end request time)
+		duration := time.Since(start)
+
+		fmt.Println("[METRICS] request duration:", duration)
 	})
 }

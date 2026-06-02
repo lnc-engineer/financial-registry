@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 	"strings"
+	"time"
 )
 
 func parseLines(lines []string) []RawRecord {
@@ -44,6 +45,8 @@ func toRecord(r RawRecord) (Record, error) {
 
 func processRecords(lines []string) ([]Record, []string) {
 
+	start := time.Now()
+
 	rawRecords := parseLines(lines)
 
 	var validRecords []Record
@@ -65,6 +68,8 @@ func processRecords(lines []string) ([]Record, []string) {
 
 		execution.RecordSuccess()
 	}
+
+	fmt.Println("[METRICS] processing duration:", time.Since(start))
 
 	return validRecords, errorMessages
 }

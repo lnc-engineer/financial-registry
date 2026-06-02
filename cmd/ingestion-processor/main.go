@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-
+	"github.com/lnc-engineer/financial-registry/internal/execution"
 	"github.com/lnc-engineer/financial-registry/internal/middleware"
+	"net/http"
+	"time"
 )
 
 const Version = "0.1.0"
@@ -36,6 +37,11 @@ func main() {
 	)
 
 	fmt.Println("Server started on :8080")
+
+	go func() {
+		time.Sleep(5 * time.Second)
+		execution.PrintMetrics()
+	}()
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
