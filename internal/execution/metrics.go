@@ -26,3 +26,11 @@ func PrintMetrics() {
 	fmt.Println("SUCCESS:", atomic.LoadUint64(&SuccessfulRequests))
 	fmt.Println("FAILURE:", atomic.LoadUint64(&FailedRequests))
 }
+
+func Snapshot() MetricsSnapshot {
+	return MetricsSnapshot{
+		TotalRequests: atomic.LoadUint64(&TotalRequests),
+		Successes:     atomic.LoadUint64(&SuccessfulRequests),
+		Failures:      atomic.LoadUint64(&FailedRequests),
+	}
+}

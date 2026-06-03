@@ -28,6 +28,11 @@ func main() {
 	)
 
 	http.Handle(
+		"/metrics",
+		middleware.LoggingMiddleware(http.HandlerFunc(metricsHandler)),
+	)
+
+	http.Handle(
 		"/process",
 		middleware.ExecutionContextMiddleware(
 			middleware.LoggingMiddleware(

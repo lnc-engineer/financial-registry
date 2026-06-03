@@ -103,3 +103,16 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		"status":  "running",
 	})
 }
+
+func metricsHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"method not allowed"},
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, execution.Snapshot())
+}
