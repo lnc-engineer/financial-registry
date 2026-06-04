@@ -33,6 +33,11 @@ func main() {
 	)
 
 	http.Handle(
+		"/events",
+		middleware.LoggingMiddleware(http.HandlerFunc(eventsHandler)),
+	)
+
+	http.Handle(
 		"/process",
 		middleware.ExecutionContextMiddleware(
 			middleware.LoggingMiddleware(

@@ -116,3 +116,25 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, execution.Snapshot())
 }
+
+func eventsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
+			"success": false,
+			"errors":  []string{"method not allowed"},
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	events := execution.Events()
+
+	jsonData, err := json.MarshalIndent(events, "", "  ")
+	if err != nil {
+		http.Error(w, "failed to encode events", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
+}
