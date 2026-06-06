@@ -38,6 +38,10 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		// Middleware duration (end-to-end request time)
 		duration := time.Since(start)
 
+		execution.RecordDuration(
+			uint64(duration.Milliseconds()),
+		)
+
 		fmt.Println("[METRICS] request duration:", duration)
 	})
 }
