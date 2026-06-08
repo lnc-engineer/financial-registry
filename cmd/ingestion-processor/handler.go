@@ -54,6 +54,8 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	execution.LogEvent(execCtx, "request_started")
+
 	defer r.Body.Close()
 
 	var request ProcessRequest
@@ -77,6 +79,8 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ProcessIngestion(execCtx, request.Records)
+
+	execution.LogEvent(execCtx, "request_completed")
 
 	writeJSON(w, http.StatusOK, response)
 }
