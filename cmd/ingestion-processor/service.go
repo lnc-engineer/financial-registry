@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/lnc-engineer/financial-registry/internal/execution"
+	"strconv"
 )
 
 func ProcessIngestion(ctx execution.ExecutionContext, records []RawRecord) ProcessResponse {
@@ -16,6 +17,9 @@ func ProcessIngestion(ctx execution.ExecutionContext, records []RawRecord) Proce
 	execution.LogEvent(ctx, "records_received")
 
 	validRecords, errors := processRecords(lines)
+
+	ctx.Metadata["records_processed"] =
+		strconv.Itoa(len(validRecords))
 
 	execution.LogEvent(ctx, "records_processed")
 

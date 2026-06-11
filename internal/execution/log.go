@@ -7,10 +7,17 @@ import (
 )
 
 func NewEvent(ctx ExecutionContext, eventType string) ExecutionEvent {
+	metadataCopy := make(map[string]string)
+
+	for k, v := range ctx.Metadata {
+		metadataCopy[k] = v
+	}
+
 	return ExecutionEvent{
 		Type:      eventType,
 		RequestID: ctx.RequestID,
 		Timestamp: time.Now().UTC(),
+		Metadata:  metadataCopy,
 	}
 }
 
