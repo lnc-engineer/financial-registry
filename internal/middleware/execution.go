@@ -20,11 +20,16 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		// CREATE execution context
 		execCtx := execution.ExecutionContext{
 			RequestID: uuid.NewString(),
+			TraceID:   uuid.NewString(),
 			StartTime: start,
 			Metadata:  make(map[string]string),
 		}
 
-		fmt.Println("[EXECUTION] injected request:", execCtx.RequestID)
+		fmt.Printf(
+			"[EXECUTION] request=%s trace=%s\n",
+			execCtx.RequestID,
+			execCtx.TraceID,
+		)
 
 		// INJECT into request context
 		ctx := context.WithValue(

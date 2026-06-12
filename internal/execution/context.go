@@ -13,6 +13,7 @@ const ExecutionContextKey ContextKey = "execution_context"
 // ExecutionContext represents a single unit of execution trace
 type ExecutionContext struct {
 	RequestID string
+	TraceID   string
 	StartTime time.Time
 	Metadata  map[string]string
 }

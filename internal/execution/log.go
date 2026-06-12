@@ -16,6 +16,7 @@ func NewEvent(ctx ExecutionContext, eventType string) ExecutionEvent {
 	return ExecutionEvent{
 		Type:      eventType,
 		RequestID: ctx.RequestID,
+		TraceID:   ctx.TraceID,
 		Timestamp: time.Now().UTC(),
 		Metadata:  metadataCopy,
 	}

@@ -6,6 +6,7 @@ import "time"
 type ExecutionEvent struct {
 	Type      string            `json:"type"`
 	RequestID string            `json:"request_id"`
+	TraceID   string            `json:"trace_id"`
 	Timestamp time.Time         `json:"timestamp"`
 	Metadata  map[string]string `json:"metadata,omitempty"`
 }
