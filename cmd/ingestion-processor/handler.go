@@ -130,15 +130,10 @@ func eventsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
 	events := execution.Events()
 
-	jsonData, err := json.MarshalIndent(events, "", "  ")
-	if err != nil {
-		http.Error(w, "failed to encode events", http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(jsonData)
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"count":  len(events),
+		"events": events,
+	})
 }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/lnc-engineer/financial-registry/internal/execution"
 	"net/http"
 	"time"
 )
@@ -30,8 +31,12 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 		duration := time.Since(start)
 
+		fmt.Println("[DEBUG] recording duration:", duration.Microseconds())
+
+		execution.RecordDuration(uint64(duration.Microseconds()))
+
 		fmt.Printf(
-			`{"type":"request","method":"%s","path":"%s","status":%d,"duration_us":%d}`+"\n",
+			`{"type":"request","method":"%s","path":"%s","status":%d,"duration_ms":%d}`+"\n",
 			r.Method,
 			r.URL.Path,
 			recorder.StatusCode,
