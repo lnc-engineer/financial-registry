@@ -18,8 +18,10 @@ func ProcessIngestion(ctx execution.ExecutionContext, records []RawRecord) Proce
 
 	validRecords, errors := processRecords(lines)
 
-	ctx.Metadata["records_processed"] =
-		strconv.Itoa(len(validRecords))
+	ctx = ctx.WithMetadata(
+		"records_processed",
+		strconv.Itoa(len(validRecords)),
+	)
 
 	execution.LogEvent(ctx, "records_processed")
 
