@@ -23,3 +23,12 @@ func FromContext(ctx context.Context) (ExecutionContext, bool) {
 	ec, ok := ctx.Value(ExecutionContextKey).(ExecutionContext)
 	return ec, ok
 }
+
+func (ec ExecutionContext) WithMetadata(key, value string) ExecutionContext {
+	if ec.Metadata == nil {
+		ec.Metadata = make(map[string]string)
+	}
+
+	ec.Metadata[key] = value
+	return ec
+}
