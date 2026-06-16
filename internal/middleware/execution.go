@@ -17,6 +17,7 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		execCtx := execution.ExecutionContext{
 			RequestID: uuid.NewString(),
 			TraceID:   uuid.NewString(),
+			SpanID:    uuid.NewString(),
 			StartTime: time.Now(),
 			Metadata:  make(map[string]string),
 		}

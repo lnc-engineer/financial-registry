@@ -14,6 +14,7 @@ const ExecutionContextKey ContextKey = "execution_context"
 type ExecutionContext struct {
 	RequestID string
 	TraceID   string
+	SpanID    string
 	StartTime time.Time
 	Metadata  map[string]string
 }
