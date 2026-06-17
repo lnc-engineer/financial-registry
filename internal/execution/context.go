@@ -12,11 +12,12 @@ const ExecutionContextKey ContextKey = "execution_context"
 
 // ExecutionContext represents a single unit of execution trace
 type ExecutionContext struct {
-	RequestID string
-	TraceID   string
-	SpanID    string
-	StartTime time.Time
-	Metadata  map[string]string
+	RequestID    string
+	TraceID      string
+	SpanID       string
+	ParentSpanID string
+	StartTime    time.Time
+	Metadata     map[string]string
 }
 
 // FromContext safely extracts execution context from request context

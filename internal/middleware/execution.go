@@ -14,7 +14,7 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 
 		execution.RecordRequest()
 
-		execCtx := execution.ExecutionContext{
+		rootSpan := execution.ExecutionContext{
 			RequestID: uuid.NewString(),
 			TraceID:   uuid.NewString(),
 			SpanID:    uuid.NewString(),
@@ -22,10 +22,24 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 			Metadata:  make(map[string]string),
 		}
 
+		execution.LogSpan("ROOT", rootSpan)
+
 		ctx := context.WithValue(
 			r.Context(),
 			execution.ExecutionContextKey,
-			execCtx,
+			rootSpan,
+		)
+
+		// Create CHILD span from root
+		childSpan := execution.NewChildSpan(rootSpan)
+
+		execution.LogSpan("CHILD", childSpan)
+
+		// Override context with child span (downstream execution uses this)
+		ctx = context.WithValue(
+			ctx,
+			execution.ExecutionContextKey,
+			childSpan,
 		)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
