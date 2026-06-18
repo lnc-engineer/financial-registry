@@ -16,3 +16,10 @@ Benefits
 - Makes trace reconstruction easier.
 - Establishes the foundation for distributed tracing.
 - Improves debugging of complex execution flows.
+
+Future Improvements
+
+- Add span duration aggregation per request
+- Enable trace tree visualization for debugging
+- Prepare structure for distributed tracing propagation
+- Consider OpenTelemetry compatibility for future integration
