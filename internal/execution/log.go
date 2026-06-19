@@ -14,12 +14,13 @@ func NewEvent(ctx ExecutionContext, eventType string) ExecutionEvent {
 	}
 
 	return ExecutionEvent{
-		Type:      eventType,
-		RequestID: ctx.RequestID,
-		TraceID:   ctx.TraceID,
-		SpanID:    ctx.SpanID,
-		Timestamp: time.Now().UTC(),
-		Metadata:  metadataCopy,
+		Type:         eventType,
+		RequestID:    ctx.RequestID,
+		TraceID:      ctx.TraceID,
+		SpanID:       ctx.SpanID,
+		ParentSpanID: ctx.ParentSpanID,
+		Timestamp:    time.Now().UTC(),
+		Metadata:     metadataCopy,
 	}
 }
 
