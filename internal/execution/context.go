@@ -16,6 +16,7 @@ type ExecutionContext struct {
 	TraceID      string
 	SpanID       string
 	ParentSpanID string
+	SpanName     string
 	StartTime    time.Time
 	Metadata     map[string]string
 }

@@ -19,6 +19,7 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 			TraceID:      uuid.NewString(),
 			SpanID:       uuid.NewString(),
 			ParentSpanID: "",
+			SpanName: "request",
 			StartTime:    time.Now(),
 			Metadata:     make(map[string]string),
 		}
@@ -33,6 +34,7 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 
 		// Create CHILD span from root
 		childSpan := execution.NewChildSpan(rootSpan)
+		childSpan.SpanName = "processing"
 
 		execution.LogSpan("CHILD", childSpan)
 
