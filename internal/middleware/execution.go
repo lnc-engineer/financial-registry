@@ -33,8 +33,7 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		)
 
 		// Create CHILD span from root
-		childSpan := execution.NewChildSpan(rootSpan)
-		childSpan.SpanName = "processing"
+		childSpan := execution.NewChildSpan(rootSpan, "processing")
 
 		execution.LogSpan("CHILD", childSpan)
 
