@@ -9,6 +9,8 @@ import (
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 )
 
+var spanBuffer []execution.ExecutionContext
+
 func ExecutionContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -19,10 +21,13 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 			TraceID:      uuid.NewString(),
 			SpanID:       uuid.NewString(),
 			ParentSpanID: "",
-			SpanName: "request",
+			SpanName:     "request",
 			StartTime:    time.Now(),
 			Metadata:     make(map[string]string),
 		}
+
+		// ADD ROOT TO BUFFER
+		spanBuffer = append(spanBuffer, rootSpan)
 
 		execution.LogSpan("ROOT", rootSpan)
 
@@ -32,19 +37,27 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 			rootSpan,
 		)
 
-		// Create CHILD span from root
+		// Create CHILD span
 		childSpan := execution.NewChildSpan(rootSpan, "processing")
+
+		// ADD CHILD TO BUFFER
+		spanBuffer = append(spanBuffer, childSpan)
 
 		execution.LogSpan("CHILD", childSpan)
 
-		// Override context with child span (downstream execution uses this)
 		ctx = context.WithValue(
 			ctx,
 			execution.ExecutionContextKey,
 			childSpan,
 		)
 
+		// run actual handler
 		next.ServeHTTP(w, r.WithContext(ctx))
 
+		// PRINT TREE AFTER REQUEST FINISHES
+		execution.PrintTraceTree(spanBuffer)
+		spanBuffer = nil
 	})
 }
+
+
