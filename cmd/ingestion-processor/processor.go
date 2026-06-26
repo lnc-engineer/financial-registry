@@ -5,6 +5,7 @@ import (
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 	"strings"
 	"time"
+	"strconv"
 )
 
 func parseLines(lines []string) []RawRecord {
@@ -43,7 +44,7 @@ func toRecord(r RawRecord) (Record, error) {
 	}, nil
 }
 
-func processRecords(lines []string) ([]Record, []string) {
+func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, []string) {
 
 	start := time.Now()
 
@@ -54,20 +55,25 @@ func processRecords(lines []string) ([]Record, []string) {
 
 	for index, raw := range rawRecords {
 
-		record, err := toRecord(raw)
+    recordCtx := execution.NewChildSpan(ctx, "record-"+strconv.Itoa(index+1))
+    execution.LogEvent(recordCtx, "record_processing_started")
 
-		if err != nil {
-			errorMessages = append(errorMessages,
-				fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
+    record, err := toRecord(raw)
 
-			execution.RecordFailure()
-			continue
-		}
+    if err != nil {
+        errorMessages = append(errorMessages,
+            fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 
-		validRecords = append(validRecords, record)
+        execution.RecordFailure()
+        execution.LogEvent(recordCtx, "record_failed")
+        continue
+    }
 
-		execution.RecordSuccess()
-	}
+    validRecords = append(validRecords, record)
+
+    execution.RecordSuccess()
+    execution.LogEvent(recordCtx, "record_success")
+}
 
 	fmt.Println("[METRICS] processing duration:", time.Since(start))
 
