@@ -56,7 +56,9 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 	for index, raw := range rawRecords {
 
     recordCtx := execution.NewChildSpan(ctx, "record-"+strconv.Itoa(index+1))
-    execution.LogEvent(recordCtx, "record_processing_started")
+	recordCtx = execution.StartSpan(recordCtx)
+
+	execution.LogEvent(recordCtx, "record_processing_started")
 
     record, err := toRecord(raw)
 
@@ -64,18 +66,24 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
         errorMessages = append(errorMessages,
             fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 
-        execution.RecordFailure()
-        execution.LogEvent(recordCtx, "record_failed")
+        execution.RecordFailure(recordCtx)
+		execution.LogEvent(recordCtx, "record_failed")
+
+		recordCtx = execution.FinishSpan(recordCtx)
         continue
     }
 
     validRecords = append(validRecords, record)
 
-    execution.RecordSuccess()
-    execution.LogEvent(recordCtx, "record_success")
+    execution.RecordSuccess(recordCtx)
+	execution.LogEvent(recordCtx, "record_success")
+
+	recordCtx = execution.FinishSpan(recordCtx)
 }
 
-	fmt.Println("[METRICS] processing duration:", time.Since(start))
+fmt.Println("[METRICS] processing duration:", time.Since(start))
 
 	return validRecords, errorMessages
+
+	
 }

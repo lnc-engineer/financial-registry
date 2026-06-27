@@ -28,3 +28,20 @@ func LogSpan(label string, ec ExecutionContext) {
 		ec.RequestID,
 	)
 }
+
+func FinishSpan(ec ExecutionContext) ExecutionContext {
+	ec.EndTime = time.Now()
+	return ec
+}
+
+func (ec ExecutionContext) Duration() time.Duration {
+	if ec.EndTime.IsZero() {
+		return time.Since(ec.StartTime)
+	}
+	return ec.EndTime.Sub(ec.StartTime)
+}
+
+func StartSpan(ec ExecutionContext) ExecutionContext {
+	ec.StartTime = time.Now()
+	return ec
+}

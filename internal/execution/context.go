@@ -18,6 +18,7 @@ type ExecutionContext struct {
 	ParentSpanID string
 	SpanName     string
 	StartTime    time.Time
+	EndTime 	 time.Time
 	Metadata     map[string]string
 }
 

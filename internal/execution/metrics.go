@@ -8,35 +8,43 @@ import (
 var TotalRequests uint64
 var SuccessfulRequests uint64
 var FailedRequests uint64
-var LastRequestDurationUs uint64
+var LastRequestDuration uint64
 
 func RecordRequest() {
 	atomic.AddUint64(&TotalRequests, 1)
 }
 
-func RecordSuccess() {
+func RecordSuccess(_ ExecutionContext) {
 	atomic.AddUint64(&SuccessfulRequests, 1)
 }
 
-func RecordFailure() {
+func RecordFailure(_ ExecutionContext) {
 	atomic.AddUint64(&FailedRequests, 1)
 }
 
-func RecordDuration(durationUs uint64) {
-	atomic.StoreUint64(&LastRequestDurationUs, durationUs)
+func RecordDuration(duration uint64) {
+	atomic.StoreUint64(&LastRequestDuration, duration)
 }
 
 func PrintMetrics() {
-	fmt.Println("TOTAL:", atomic.LoadUint64(&TotalRequests))
-	fmt.Println("SUCCESS:", atomic.LoadUint64(&SuccessfulRequests))
-	fmt.Println("FAILURE:", atomic.LoadUint64(&FailedRequests))
+	fmt.Println("TOTAL:", TotalRequests)
+	fmt.Println("SUCCESS:", SuccessfulRequests)
+	fmt.Println("FAILURE:", FailedRequests)
+	fmt.Println("LAST DURATION:", LastRequestDuration)
+}
+
+type MetricsSnapshot struct {
+	TotalRequests         uint64
+	Successes             uint64
+	Failures              uint64
+	LastRequestDuration   uint64
 }
 
 func Snapshot() MetricsSnapshot {
 	return MetricsSnapshot{
-		TotalRequests:         atomic.LoadUint64(&TotalRequests),
-		Successes:             atomic.LoadUint64(&SuccessfulRequests),
-		Failures:              atomic.LoadUint64(&FailedRequests),
-		LastRequestDurationUs: atomic.LoadUint64(&LastRequestDurationUs),
+		TotalRequests:       TotalRequests,
+		Successes:           SuccessfulRequests,
+		Failures:            FailedRequests,
+		LastRequestDuration: LastRequestDuration,
 	}
 }
