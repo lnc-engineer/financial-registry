@@ -60,11 +60,14 @@ func printNode(n *TraceNode, prefix string, isLast bool) {
 		nextPrefix = prefix + "    "
 	}
 
-	fmt.Printf("%s%s%s (%s)\n",
+	duration := n.Context.Duration()
+
+	fmt.Printf("%s%s%s (%s) [%s]\n",
 		prefix,
 		connector,
 		n.Context.SpanName,
 		n.Context.SpanID,
+		duration,
 	)
 
 	for i, c := range n.Children {

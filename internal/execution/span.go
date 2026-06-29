@@ -6,15 +6,19 @@ import (
 )
 
 func NewChildSpan(parent ExecutionContext, spanName string) ExecutionContext {
-	return ExecutionContext{
+	child := ExecutionContext{
 		RequestID:    parent.RequestID,
 		TraceID:      parent.TraceID,
 		SpanID:       fmt.Sprintf("span-%d", time.Now().UnixNano()),
 		ParentSpanID: parent.SpanID,
-		SpanName: 	  spanName,
+		SpanName:     spanName,
 		StartTime:    time.Now(),
 		Metadata:     make(map[string]string),
 	}
+
+	child.AddLifecycleEvent("Span Started")
+
+	return child
 }
 
 func LogSpan(label string, ec ExecutionContext) {

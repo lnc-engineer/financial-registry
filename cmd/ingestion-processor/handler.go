@@ -80,6 +80,9 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := ProcessIngestion(execCtx, request.Records)
 
+
+	execCtx.AddLifecycleEvent("Span Completed")
+
 	execution.LogEvent(execCtx, "request_completed")
 
 	writeJSON(w, http.StatusOK, response)
