@@ -48,3 +48,10 @@ func Snapshot() MetricsSnapshot {
 		LastRequestDuration: LastRequestDuration,
 	}
 }
+
+func ResetMetrics() {
+	atomic.StoreUint64(&TotalRequests, 0)
+	atomic.StoreUint64(&SuccessfulRequests, 0)
+	atomic.StoreUint64(&FailedRequests, 0)
+	atomic.StoreUint64(&LastRequestDuration, 0)
+}
