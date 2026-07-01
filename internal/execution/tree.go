@@ -70,6 +70,12 @@ func printNode(n *TraceNode, prefix string, isLast bool) {
 		duration,
 	)
 
+	if len(n.Context.Metadata) > 0 {
+		for key, value := range n.Context.Metadata {
+			fmt.Printf("%s    • %s = %s\n", nextPrefix, key, value)
+		}
+	}
+
 	for i, c := range n.Children {
 		printNode(c, nextPrefix, i == len(n.Children)-1)
 	}

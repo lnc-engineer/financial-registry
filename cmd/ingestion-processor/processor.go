@@ -30,17 +30,25 @@ func parseLines(lines []string) []RawRecord {
 // UPDATED: now accepts simple records like "txn-001"
 func toRecord(r RawRecord) (Record, error) {
 
-	value := strings.TrimSpace(r.Raw)
+	parts := strings.Split(strings.TrimSpace(r.Raw), ",")
 
-	if value == "" {
-		return Record{}, fmt.Errorf("empty record")
+	if len(parts) != 3 {
+		return Record{}, fmt.Errorf("invalid format")
 	}
 
-	// Minimal valid transformation
+	name := strings.TrimSpace(parts[0])
+	ageStr := strings.TrimSpace(parts[1])
+	role := strings.TrimSpace(parts[2])
+
+	age, err := strconv.Atoi(ageStr)
+	if err != nil {
+		return Record{}, fmt.Errorf("invalid age")
+	}
+
 	return Record{
-		Name: value,
-		Age:  0,
-		Role: "unprocessed",
+		Name: name,
+		Age:  age,
+		Role: role,
 	}, nil
 }
 
@@ -58,6 +66,9 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
     recordCtx := execution.NewChildSpan(ctx, "record-"+strconv.Itoa(index+1))
 	recordCtx = execution.StartSpan(recordCtx)
 
+	recordCtx = recordCtx.WithMetadata("stage", "record_processing")
+	recordCtx = recordCtx.WithMetadata("record_index", strconv.Itoa(index+1))
+
 	execution.LogEvent(recordCtx, "record_processing_started")
 
     record, err := toRecord(raw)
@@ -65,6 +76,8 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
     if err != nil {
         errorMessages = append(errorMessages,
             fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
+
+		recordCtx = recordCtx.WithMetadata("result", "failure")
 
         execution.RecordFailure(recordCtx)
 		execution.LogEvent(recordCtx, "record_failed")
@@ -74,6 +87,8 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
     }
 
     validRecords = append(validRecords, record)
+
+	recordCtx = recordCtx.WithMetadata("result", "success")
 
     execution.RecordSuccess(recordCtx)
 	execution.LogEvent(recordCtx, "record_success")
