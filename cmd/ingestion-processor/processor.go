@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/lnc-engineer/financial-registry/internal/execution"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 )
 
 func parseLines(lines []string) []RawRecord {
@@ -63,42 +63,41 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 
 	for index, raw := range rawRecords {
 
-    recordCtx := execution.NewChildSpan(ctx, "record-"+strconv.Itoa(index+1))
-	recordCtx = execution.StartSpan(recordCtx)
+		recordCtx := execution.NewChildSpan(ctx, "record-"+strconv.Itoa(index+1))
+		recordCtx = execution.StartSpan(recordCtx)
 
-	recordCtx = recordCtx.WithMetadata("stage", "record_processing")
-	recordCtx = recordCtx.WithMetadata("record_index", strconv.Itoa(index+1))
+		recordCtx = recordCtx.WithMetadata("stage", "record_processing")
+		recordCtx = recordCtx.WithMetadata("record_index", strconv.Itoa(index+1))
 
-	execution.LogEvent(recordCtx, "record_processing_started")
+		execution.LogEvent(recordCtx, "record_processing_started")
 
-    record, err := toRecord(raw)
+		record, err := toRecord(raw)
 
-    if err != nil {
-        errorMessages = append(errorMessages,
-            fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
+		if err != nil {
+			errorMessages = append(errorMessages,
+				fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 
-		recordCtx = recordCtx.WithMetadata("result", "failure")
+			recordCtx = recordCtx.WithMetadata("result", "failure")
 
-        execution.RecordFailure(recordCtx)
-		execution.LogEvent(recordCtx, "record_failed")
+			execution.RecordFailure(recordCtx)
+			execution.LogEvent(recordCtx, "record_failed")
+
+			recordCtx = execution.FinishSpan(recordCtx)
+			continue
+		}
+
+		validRecords = append(validRecords, record)
+
+		recordCtx = recordCtx.WithMetadata("result", "success")
+
+		execution.RecordSuccess(recordCtx)
+		execution.LogEvent(recordCtx, "record_success")
 
 		recordCtx = execution.FinishSpan(recordCtx)
-        continue
-    }
+	}
 
-    validRecords = append(validRecords, record)
-
-	recordCtx = recordCtx.WithMetadata("result", "success")
-
-    execution.RecordSuccess(recordCtx)
-	execution.LogEvent(recordCtx, "record_success")
-
-	recordCtx = execution.FinishSpan(recordCtx)
-}
-
-fmt.Println("[METRICS] processing duration:", time.Since(start))
+	fmt.Println("[METRICS] processing duration:", time.Since(start))
 
 	return validRecords, errorMessages
 
-	
 }

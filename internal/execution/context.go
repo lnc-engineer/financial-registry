@@ -18,8 +18,8 @@ type ExecutionContext struct {
 	ParentSpanID string
 	SpanName     string
 	StartTime    time.Time
-	EndTime 	 time.Time
-	Lifecycle []LifecycleEvent
+	EndTime      time.Time
+	Lifecycle    []LifecycleEvent
 	Metadata     map[string]string
 }
 

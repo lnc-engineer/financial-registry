@@ -35,6 +35,7 @@ func LogSpan(label string, ec ExecutionContext) {
 
 func FinishSpan(ec ExecutionContext) ExecutionContext {
 	ec.EndTime = time.Now()
+	ec.AddLifecycleEvent("Span Completed")
 	RecordSpan(ec)
 	return ec
 }

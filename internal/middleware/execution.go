@@ -17,14 +17,14 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		execution.RecordRequest()
 
 		rootSpan := execution.ExecutionContext{
-		RequestID:    uuid.NewString(),
-		TraceID:      uuid.NewString(),
-		SpanID:       uuid.NewString(),
-		ParentSpanID: "",
-		SpanName:     "request",
-		StartTime:    time.Now(),
-		Metadata:     make(map[string]string),
-	}
+			RequestID:    uuid.NewString(),
+			TraceID:      uuid.NewString(),
+			SpanID:       uuid.NewString(),
+			ParentSpanID: "",
+			SpanName:     "request",
+			StartTime:    time.Now(),
+			Metadata:     make(map[string]string),
+		}
 
 		rootSpan.AddLifecycleEvent("Span Started")
 
@@ -61,5 +61,3 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		spanBuffer = nil
 	})
 }
-
-

@@ -1,6 +1,9 @@
 package execution
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type TraceNode struct {
 	Context  ExecutionContext
@@ -73,6 +76,17 @@ func printNode(n *TraceNode, prefix string, isLast bool) {
 	if len(n.Context.Metadata) > 0 {
 		for key, value := range n.Context.Metadata {
 			fmt.Printf("%s    • %s = %s\n", nextPrefix, key, value)
+		}
+	}
+
+	if len(n.Context.Lifecycle) > 0 {
+		for _, event := range n.Context.Lifecycle {
+			fmt.Printf(
+				"%s    ◦ %s (%s)\n",
+				nextPrefix,
+				event.Name,
+				event.Timestamp.Format(time.RFC3339),
+			)
 		}
 	}
 

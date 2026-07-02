@@ -34,10 +34,10 @@ func PrintMetrics() {
 }
 
 type MetricsSnapshot struct {
-	TotalRequests         uint64
-	Successes             uint64
-	Failures              uint64
-	LastRequestDuration   uint64
+	TotalRequests       uint64
+	Successes           uint64
+	Failures            uint64
+	LastRequestDuration uint64
 }
 
 func Snapshot() MetricsSnapshot {
