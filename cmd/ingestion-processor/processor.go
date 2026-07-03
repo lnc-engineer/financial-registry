@@ -66,8 +66,8 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 		recordCtx := execution.NewChildSpan(ctx, "record-"+strconv.Itoa(index+1))
 		recordCtx = execution.StartSpan(recordCtx)
 
-		recordCtx = recordCtx.WithMetadata("stage", "record_processing")
-		recordCtx = recordCtx.WithMetadata("record_index", strconv.Itoa(index+1))
+		recordCtx = recordCtx.WithAttribute("stage", "record_processing")
+		recordCtx = recordCtx.WithAttribute("record_index", strconv.Itoa(index+1))
 
 		execution.LogEvent(recordCtx, "record_processing_started")
 
@@ -77,7 +77,7 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 			errorMessages = append(errorMessages,
 				fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 
-			recordCtx = recordCtx.WithMetadata("result", "failure")
+			recordCtx = recordCtx.WithAttribute("result", "failure")
 
 			execution.RecordFailure(recordCtx)
 			execution.LogEvent(recordCtx, "record_failed")
@@ -88,7 +88,7 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 
 		validRecords = append(validRecords, record)
 
-		recordCtx = recordCtx.WithMetadata("result", "success")
+		recordCtx = recordCtx.WithAttribute("result", "success")
 
 		execution.RecordSuccess(recordCtx)
 		execution.LogEvent(recordCtx, "record_success")

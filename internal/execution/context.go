@@ -20,7 +20,7 @@ type ExecutionContext struct {
 	StartTime    time.Time
 	EndTime      time.Time
 	Lifecycle    []LifecycleEvent
-	Metadata     map[string]string
+	Attributes map[string]string
 }
 
 // FromContext safely extracts execution context from request context
@@ -29,11 +29,11 @@ func FromContext(ctx context.Context) (ExecutionContext, bool) {
 	return ec, ok
 }
 
-func (ec ExecutionContext) WithMetadata(key, value string) ExecutionContext {
-	if ec.Metadata == nil {
-		ec.Metadata = make(map[string]string)
+func (ec ExecutionContext) WithAttribute(key, value string) ExecutionContext {
+	if ec.Attributes == nil {
+		ec.Attributes = make(map[string]string)
 	}
 
-	ec.Metadata[key] = value
+	ec.Attributes[key] = value
 	return ec
 }

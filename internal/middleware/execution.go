@@ -23,7 +23,8 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 			ParentSpanID: "",
 			SpanName:     "request",
 			StartTime:    time.Now(),
-			Metadata:     make(map[string]string),
+			Attributes:   map[string]string{},
+			Lifecycle:    []execution.LifecycleEvent{},
 		}
 
 		rootSpan.AddLifecycleEvent("Span Started")

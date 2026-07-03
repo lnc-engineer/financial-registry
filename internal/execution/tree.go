@@ -3,6 +3,7 @@ package execution
 import (
 	"fmt"
 	"time"
+	"sort"
 )
 
 type TraceNode struct {
@@ -73,10 +74,19 @@ func printNode(n *TraceNode, prefix string, isLast bool) {
 		duration,
 	)
 
-	if len(n.Context.Metadata) > 0 {
-		for key, value := range n.Context.Metadata {
-			fmt.Printf("%s    • %s = %s\n", nextPrefix, key, value)
-		}
+	if len(n.Context.Attributes) > 0 {
+
+	keys := make([]string, 0, len(n.Context.Attributes))
+
+	for k := range n.Context.Attributes {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		fmt.Printf("%s    • %s = %s\n", nextPrefix, k, n.Context.Attributes[k])
+	}
 	}
 
 	if len(n.Context.Lifecycle) > 0 {

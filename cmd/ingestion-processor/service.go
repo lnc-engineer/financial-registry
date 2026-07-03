@@ -18,7 +18,7 @@ func ProcessIngestion(ctx execution.ExecutionContext, records []RawRecord) Proce
 
 	validRecords, errors := processRecords(ctx, lines)
 
-	ctx = ctx.WithMetadata(
+	ctx = ctx.WithAttribute(
 		"records_processed",
 		strconv.Itoa(len(validRecords)),
 	)

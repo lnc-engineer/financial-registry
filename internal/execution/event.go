@@ -10,5 +10,5 @@ type ExecutionEvent struct {
 	SpanID       string            `json:"span_id"`
 	ParentSpanID string            `json:"parent_span_id"`
 	Timestamp    time.Time         `json:"timestamp"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	Attributes map[string]string   `json:"attributes,omitempty"`
 }

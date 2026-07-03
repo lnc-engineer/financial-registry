@@ -7,11 +7,11 @@ import (
 )
 
 func NewEvent(ctx ExecutionContext, eventType string) ExecutionEvent {
-	metadataCopy := make(map[string]string)
+	attributesCopy := make(map[string]string)
 
-	for k, v := range ctx.Metadata {
-		metadataCopy[k] = v
-	}
+for k, v := range ctx.Attributes {
+	attributesCopy[k] = v
+}
 
 	return ExecutionEvent{
 		Type:         eventType,
@@ -20,7 +20,7 @@ func NewEvent(ctx ExecutionContext, eventType string) ExecutionEvent {
 		SpanID:       ctx.SpanID,
 		ParentSpanID: ctx.ParentSpanID,
 		Timestamp:    time.Now().UTC(),
-		Metadata:     metadataCopy,
+		Attributes: attributesCopy,
 	}
 }
 
