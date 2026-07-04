@@ -58,7 +58,10 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 		// PRINT TREE AFTER REQUEST FINISHES
+		roots := execution.BuildTraceTree(spanBuffer)
+
 		execution.PrintTraceTree(spanBuffer)
+		execution.PrintTraceJSON(roots)
 		spanBuffer = nil
 	})
 }

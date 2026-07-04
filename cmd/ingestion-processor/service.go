@@ -5,14 +5,11 @@ import (
 	"strconv"
 )
 
-func ProcessIngestion(ctx execution.ExecutionContext, records []RawRecord) ProcessResponse {
+func ProcessIngestion(ctx execution.ExecutionContext, records []string) ProcessResponse {
 
 	execution.LogEvent(ctx, "ingestion_started")
 
-	lines := make([]string, 0, len(records))
-	for _, r := range records {
-		lines = append(lines, r.Raw)
-	}
+	lines := records
 
 	execution.LogEvent(ctx, "records_received")
 

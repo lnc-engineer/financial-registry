@@ -20,7 +20,7 @@ type ExecutionContext struct {
 	StartTime    time.Time
 	EndTime      time.Time
 	Lifecycle    []LifecycleEvent
-	Attributes map[string]string
+	Attributes   map[string]string
 }
 
 // FromContext safely extracts execution context from request context

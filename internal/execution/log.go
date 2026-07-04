@@ -9,9 +9,9 @@ import (
 func NewEvent(ctx ExecutionContext, eventType string) ExecutionEvent {
 	attributesCopy := make(map[string]string)
 
-for k, v := range ctx.Attributes {
-	attributesCopy[k] = v
-}
+	for k, v := range ctx.Attributes {
+		attributesCopy[k] = v
+	}
 
 	return ExecutionEvent{
 		Type:         eventType,
@@ -20,7 +20,7 @@ for k, v := range ctx.Attributes {
 		SpanID:       ctx.SpanID,
 		ParentSpanID: ctx.ParentSpanID,
 		Timestamp:    time.Now().UTC(),
-		Attributes: attributesCopy,
+		Attributes:   attributesCopy,
 	}
 }
 

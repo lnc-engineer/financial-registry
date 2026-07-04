@@ -13,8 +13,8 @@ func NewChildSpan(parent ExecutionContext, spanName string) ExecutionContext {
 		ParentSpanID: parent.SpanID,
 		SpanName:     spanName,
 		StartTime:    time.Now(),
-		Attributes: map[string]string{},
-		Lifecycle: []LifecycleEvent{},
+		Attributes:   map[string]string{},
+		Lifecycle:    []LifecycleEvent{},
 	}
 
 	child.AddLifecycleEvent("Span Started")

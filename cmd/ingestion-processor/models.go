@@ -18,5 +18,5 @@ type ProcessResponse struct {
 }
 
 type ProcessRequest struct {
-	Records []RawRecord `json:"records"`
+	Records []string `json:"records"`
 }

@@ -84,8 +84,6 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	execution.LogEvent(execCtx, "request_completed")
 
-	execution.PrintTraceTree(execution.GetSpans())
-
 	writeJSON(w, http.StatusOK, response)
 }
 
