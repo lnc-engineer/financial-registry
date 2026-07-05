@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 )
@@ -36,6 +38,9 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 // -------------------- HANDLER --------------------
 
 func processHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("PROCESS HANDLER HIT")
+
+	start := time.Now()
 
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
@@ -53,6 +58,9 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	//  SINGLE correct metrics call
+	execution.RecordRequest()
 
 	execution.LogEvent(execCtx, "request_started")
 
@@ -80,7 +88,9 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := ProcessIngestion(execCtx, request.Records)
 
-	execCtx.AddLifecycleEvent("Span Completed")
+	execution.RecordDuration(uint64(time.Since(start).Milliseconds()))
+
+	execCtx = execution.FinishSpan(execCtx)
 
 	execution.LogEvent(execCtx, "request_completed")
 

@@ -78,6 +78,7 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 				fmt.Sprintf("Invalid record at line %d: %s", index+1, raw.Raw))
 
 			recordCtx = recordCtx.WithAttribute("result", "failure")
+			recordCtx.Status = "failure"
 
 			execution.RecordFailure(recordCtx)
 			execution.LogEvent(recordCtx, "record_failed")
@@ -89,6 +90,7 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 		validRecords = append(validRecords, record)
 
 		recordCtx = recordCtx.WithAttribute("result", "success")
+		recordCtx.Status = "success"
 
 		execution.RecordSuccess(recordCtx)
 		execution.LogEvent(recordCtx, "record_success")

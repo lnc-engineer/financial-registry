@@ -52,13 +52,9 @@ func (t *TraceNode) Export() TraceExport {
 }
 
 func deriveStatus(ctx ExecutionContext) string {
-	for _, e := range ctx.Lifecycle {
-		if e.Name == "record_success" {
-			return "success"
-		}
-		if e.Name == "record_failed" {
-			return "failure"
-		}
+	if ctx.Status != "" {
+		return ctx.Status
 	}
+
 	return "unknown"
 }

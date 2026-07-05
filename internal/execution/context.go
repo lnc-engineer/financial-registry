@@ -19,6 +19,7 @@ type ExecutionContext struct {
 	SpanName     string
 	StartTime    time.Time
 	EndTime      time.Time
+	Status       string
 	Lifecycle    []LifecycleEvent
 	Attributes   map[string]string
 }

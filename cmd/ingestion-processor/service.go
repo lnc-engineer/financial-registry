@@ -9,16 +9,24 @@ func ProcessIngestion(ctx execution.ExecutionContext, records []string) ProcessR
 
 	execution.LogEvent(ctx, "ingestion_started")
 
-	lines := records
-
 	execution.LogEvent(ctx, "records_received")
 
-	validRecords, errors := processRecords(ctx, lines)
+	validRecords, errors := processRecords(ctx, records)
 
+	// attach metadata to span
 	ctx = ctx.WithAttribute(
 		"records_processed",
 		strconv.Itoa(len(validRecords)),
 	)
+
+	// set final status on span
+	if len(errors) == 0 {
+		ctx.Status = "success"
+		execution.RecordSuccess(ctx)
+	} else {
+		ctx.Status = "failure"
+		execution.RecordFailure(ctx)
+	}
 
 	execution.LogEvent(ctx, "records_processed")
 
