@@ -21,7 +21,7 @@ func ProcessIngestion(ctx execution.ExecutionContext, records []string) ProcessR
 
 	// set final status on span
 	if len(errors) == 0 {
-		ctx.Status = "success"
+		ctx.Status = "SUCCESS"
 		execution.RecordSuccess(ctx)
 	} else {
 		ctx.Status = "failure"

@@ -88,6 +88,8 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := ProcessIngestion(execCtx, request.Records)
 
+	execCtx = execCtx.MarkSuccess()
+
 	execution.RecordDuration(uint64(time.Since(start).Milliseconds()))
 
 	execCtx = execution.FinishSpan(execCtx)

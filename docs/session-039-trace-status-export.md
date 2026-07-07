@@ -2,95 +2,203 @@
 
 ## Overview
 
-This session improves the trace export system by adding execution status information to every span.
+This session enhances the trace export system by adding execution status information to every exported span.
 
-Previously, traces contained structural information such as trace IDs, parent-child relationships, timing information, and custom attributes. However, there was no direct indication of whether each span completed successfully or failed.
+Previously, traces contained structural execution information including trace IDs, span relationships, duration tracking, and attributes. However, there was no explicit indication of whether an individual span completed successfully or failed.
 
-This session extends the exported trace representation so that execution status becomes a first-class part of every span, making traces easier to inspect and preparing the tracing system for future observability and monitoring capabilities.
+This session introduces span status as a first-class observability signal and improves trace state consistency by ensuring exported traces use the final recorded execution state.
 
 ---
 
 ## What Was Implemented
 
-### Added Status Field to Exported Spans
+### Added Status Tracking to Execution Context
 
-The exported trace representation now includes a dedicated **Status** field.
+The execution context already contained a status field. This session added helper methods for controlled status updates:
 
-Each exported span now reports whether it finished with a:
+- `MarkSuccess()`
+- `MarkFailure()`
 
-* `SUCCESS`
-* `FAILURE`
-
-status.
-
-This removes the need to infer execution outcome from other fields.
+This provides a consistent way for execution components to update completion state.
 
 ---
 
-### Updated Trace Export Logic
+## Updated Trace Export
 
-The trace export pipeline was updated so that each span's execution status is included when converting internal execution contexts into exported trace structures.
+The trace export representation now includes execution status alongside existing trace information.
 
-The exporter now copies status information alongside:
+Each exported span now reports:
 
-* Trace ID
-* Span ID
-* Parent Span ID
-* Span Name
-* Duration
-* Attributes
-* Child Spans
+- Trace ID
+- Span ID
+- Parent Span ID
+- Span name
+- Duration
+- Child spans
+- Execution status
 
----
+Supported execution states:
 
-### Status Derived from Execution Context
+- `SUCCESS`
+- `FAILURE`
 
-Rather than introducing separate tracking logic, the exporter derives status directly from the execution context.
-
-This keeps the exported representation synchronized with the execution state while avoiding duplicate sources of truth.
-
----
-
-### Improved Trace Readability
-
-Including status in exported traces makes execution trees significantly easier to inspect.
-
-Developers can immediately identify:
-
-* successful execution paths
-* failed spans
-* where failures occurred within nested child spans
-
-without manually examining application logic.
+This removes the need to infer execution outcome from other trace fields.
 
 ---
 
-## Why This Matters
+## Status Propagation
 
-As the tracing system grows, execution status becomes one of the most valuable observability signals.
+Execution paths now explicitly mark successful completion before finishing spans.
 
-It allows future tooling to:
+The successful execution flow is:
 
-* highlight failed spans
-* generate execution summaries
-* calculate success rates
-* filter traces by outcome
-* support richer monitoring dashboards
 
-This enhancement also moves the project closer to production-grade distributed tracing systems, where span status is a standard part of telemetry.
+Process Execution
+|
+v
+MarkSuccess()
+|
+v
+FinishSpan()
+|
+v
+RecordSpan()
+
+
+This ensures that the stored execution span contains the final execution outcome before trace export.
+
+---
+
+## Trace State Consistency Improvement
+
+During validation, a stale trace state issue was identified.
+
+Previously, middleware maintained its own span buffer:
+
+
+middleware spanBuffer
+|
+v
+BuildTraceTree()
+|
+v
+Trace Export
+
+
+At the same time, completed spans were stored separately through:
+
+
+FinishSpan()
+|
+v
+RecordSpan()
+|
+v
+Execution Store
+
+
+This created two sources of trace state, causing exported traces to contain outdated information such as:
+
+
+status: unknown
+
+
+The middleware was updated to use the execution span store as the single source of truth.
+
+The new flow is:
+
+
+FinishSpan()
+|
+v
+RecordSpan()
+|
+v
+GetSpans()
+|
+v
+BuildTraceTree()
+|
+v
+Trace Export
+
+
+This guarantees that exported traces represent the final completed execution state.
+
+---
+
+## Added Trace Summary
+
+A trace summary component was introduced to provide aggregated execution information.
+
+The summary reports:
+
+- Total spans
+- Successful spans
+- Failed spans
+- Maximum trace depth
+- Total execution duration
+
+Example:
+
+
+TotalSpans: 2
+SuccessCount: 2
+FailureCount: 0
+
+
+This provides a foundation for future monitoring and analytics features.
+
+---
+
+## Status Normalisation
+
+Execution status values were standardised across the tracing system.
+
+Before:
+
+
+success
+
+
+After:
+
+
+SUCCESS
+
+
+This ensures consistent aggregation and allows summary calculations to correctly identify successful spans.
 
 ---
 
 ## Files Modified
 
-* `internal/execution/trace_export.go`
-* `internal/execution/context.go`
-* `cmd/ingestion-processor/handler.go`
+
+cmd/ingestion-processor/handler.go
+cmd/ingestion-processor/processor.go
+cmd/ingestion-processor/service.go
+
+internal/execution/context.go
+internal/execution/trace_export.go
+internal/execution/trace_summary.go
+
+internal/middleware/execution.go
+
 
 ---
 
 ## Result
 
-The Financial Registry now exports traces that include execution outcome information for every span.
+The Financial Registry now exports traces containing explicit execution outcomes.
 
-Each exported trace contains not only structural relationships and timing information, but also explicit success or failure status, providing a richer and more useful execution history for debugging, observability, and future analytics.
+Each completed span reports whether it succeeded or failed, making execution history easier to inspect and analyse.
+
+This improvement enables future observability capabilities including:
+
+- failed span detection
+- success-rate calculations
+- trace filtering
+- monitoring dashboards
+- execution analytics
+
+The tracing architecture now maintains a single source of truth for completed spans, improving reliability and preparing the system for more advanced distributed observability features.

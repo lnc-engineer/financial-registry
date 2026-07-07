@@ -90,7 +90,7 @@ func processRecords(ctx execution.ExecutionContext, lines []string) ([]Record, [
 		validRecords = append(validRecords, record)
 
 		recordCtx = recordCtx.WithAttribute("result", "success")
-		recordCtx.Status = "success"
+		recordCtx.Status = "SUCCESS"
 
 		execution.RecordSuccess(recordCtx)
 		execution.LogEvent(recordCtx, "record_success")

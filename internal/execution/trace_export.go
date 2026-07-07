@@ -5,6 +5,11 @@ import (
 	"fmt"
 )
 
+type TraceReport struct {
+	Summary TraceSummary  `json:"summary"`
+	Spans   []TraceExport `json:"spans"`
+}
+
 func PrintTraceJSON(roots []*TraceNode) {
 
 	var exports []TraceExport
@@ -13,7 +18,12 @@ func PrintTraceJSON(roots []*TraceNode) {
 		exports = append(exports, r.Export())
 	}
 
-	data, err := json.MarshalIndent(exports, "", "  ")
+	report := TraceReport{
+		Summary: BuildTraceSummary(roots),
+		Spans:   exports,
+	}
+
+	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		fmt.Println("JSON export error:", err)
 		return

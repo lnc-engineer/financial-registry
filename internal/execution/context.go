@@ -38,3 +38,13 @@ func (ec ExecutionContext) WithAttribute(key, value string) ExecutionContext {
 	ec.Attributes[key] = value
 	return ec
 }
+
+func (ec ExecutionContext) MarkSuccess() ExecutionContext {
+	ec.Status = "SUCCESS"
+	return ec
+}
+
+func (ec ExecutionContext) MarkFailure() ExecutionContext {
+	ec.Status = "FAILURE"
+	return ec
+}

@@ -9,8 +9,6 @@ import (
 	"github.com/lnc-engineer/financial-registry/internal/execution"
 )
 
-var spanBuffer []execution.ExecutionContext
-
 func ExecutionContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -30,7 +28,6 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		rootSpan.AddLifecycleEvent("Span Started")
 
 		// ADD ROOT TO BUFFER
-		spanBuffer = append(spanBuffer, rootSpan)
 
 		execution.LogSpan("ROOT", rootSpan)
 
@@ -44,7 +41,6 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		childSpan := execution.NewChildSpan(rootSpan, "processing")
 
 		// ADD CHILD TO BUFFER
-		spanBuffer = append(spanBuffer, childSpan)
 
 		execution.LogSpan("CHILD", childSpan)
 
@@ -58,10 +54,12 @@ func ExecutionContextMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 		// PRINT TREE AFTER REQUEST FINISHES
-		roots := execution.BuildTraceTree(spanBuffer)
+		spans := execution.GetSpans()
+		roots := execution.BuildTraceTree(spans)
 
-		execution.PrintTraceTree(spanBuffer)
+		execution.PrintTraceTree(spans)
 		execution.PrintTraceJSON(roots)
-		spanBuffer = nil
+
+		execution.ResetSpans()
 	})
 }
