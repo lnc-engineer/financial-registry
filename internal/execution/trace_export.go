@@ -68,3 +68,8 @@ func deriveStatus(ctx ExecutionContext) string {
 
 	return "unknown"
 }
+
+func SearchTrace(root *TraceNode, key, value string) []string {
+	matches := FindSpans(root, key, value)
+	return SpanNames(matches)
+}
