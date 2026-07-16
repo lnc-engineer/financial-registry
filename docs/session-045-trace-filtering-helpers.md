@@ -1,4 +1,4 @@
-# Session 044 – Trace Filtering Helpers
+# Session 045 – Trace Filtering Helpers
 
 ## Overview
 
