@@ -2,34 +2,50 @@ package execution
 
 import "testing"
 
-func TestCompositeFilterAppliesMultipleFilters(t *testing.T) {
+func TestCompositeFilterAppliesMultipleCriteria(t *testing.T) {
 	spans := []ExecutionContext{
 		{
-			TraceID: "trace-001",
+			TraceID: "trace-1",
 			Status:  "success",
+			Lifecycle: []LifecycleEvent{
+				{
+					Name: "started",
+				},
+			},
 		},
 		{
-			TraceID: "trace-001",
+			TraceID: "trace-1",
 			Status:  "failure",
+			Lifecycle: []LifecycleEvent{
+				{
+					Name: "failed",
+				},
+			},
 		},
 		{
-			TraceID: "trace-002",
+			TraceID: "trace-2",
 			Status:  "success",
+			Lifecycle: []LifecycleEvent{
+				{
+					Name: "started",
+				},
+			},
 		},
 	}
 
 	filter := CompositeFilter{
-		TraceID: "trace-001",
-		Status:  "success",
+		TraceID:   "trace-1",
+		Status:    "success",
+		Lifecycle: "started",
 	}
 
 	result := filter.Apply(spans)
 
 	if len(result) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(result))
+		t.Fatalf("expected 1 matching span, got %d", len(result))
 	}
 
-	if result[0].Status != "success" {
-		t.Fatal("expected success status")
+	if result[0].TraceID != "trace-1" {
+		t.Fatalf("expected trace-1, got %s", result[0].TraceID)
 	}
 }
