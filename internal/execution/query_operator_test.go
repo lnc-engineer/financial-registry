@@ -25,3 +25,15 @@ func TestMatchValueNoMatch(t *testing.T) {
 		t.Fatal("expected values not to match")
 	}
 }
+
+func TestMatchValueNotEquals(t *testing.T) {
+	if !MatchValue("failure", "success", OperatorNotEquals) {
+		t.Fatal("expected values not to match")
+	}
+}
+
+func TestMatchValueNotEqualsSameValue(t *testing.T) {
+	if MatchValue("success", "success", OperatorNotEquals) {
+		t.Fatal("expected equal values to fail not equals comparison")
+	}
+}

@@ -6,6 +6,7 @@ type QueryOperator string
 
 const (
 	OperatorEquals     QueryOperator = "equals"
+	OperatorNotEquals  QueryOperator = "not_equals"
 	OperatorContains   QueryOperator = "contains"
 	OperatorStartsWith QueryOperator = "starts_with"
 )
@@ -14,10 +15,16 @@ func MatchValue(value, expected string, operator QueryOperator) bool {
 	switch operator {
 	case OperatorEquals:
 		return value == expected
+
+	case OperatorNotEquals:
+		return value != expected
+
 	case OperatorContains:
 		return strings.Contains(value, expected)
+
 	case OperatorStartsWith:
 		return strings.HasPrefix(value, expected)
+
 	default:
 		return false
 	}
