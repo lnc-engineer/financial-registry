@@ -18,11 +18,14 @@ func ApplyJoin(
 
 	for _, leftCtx := range left {
 		leftValue := resolveJoinField(leftCtx, condition.LeftField)
+		matched := false
 
 		for _, rightCtx := range right {
 			rightValue := resolveJoinField(rightCtx, condition.RightField)
 
 			if leftValue == rightValue {
+				matched = true
+
 				joined := leftCtx
 
 				if joined.Attributes == nil {
@@ -35,6 +38,10 @@ func ApplyJoin(
 
 				results = append(results, joined)
 			}
+		}
+
+		if !matched {
+			results = append(results, leftCtx)
 		}
 	}
 
