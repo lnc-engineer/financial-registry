@@ -194,3 +194,242 @@ func TestApplyJoinReturnsEmptyWhenLeftIsEmpty(t *testing.T) {
 		t.Fatalf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestApplyRightJoinMatchesRecords(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "trace-001",
+			Attributes: map[string]string{
+				"name": "transaction",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "trace-001",
+			Attributes: map[string]string{
+				"service": "payments",
+			},
+		},
+	}
+
+	results := ApplyRightJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "trace_id",
+			RightField: "trace_id",
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["left_name"] != "transaction" {
+		t.Fatalf("expected joined name attribute")
+	}
+}
+
+func TestApplyRightJoinPreservesUnmatchedRightResults(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+				"currency":   "USD",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "account_id",
+		RightField: "account_id",
+	}
+
+	results := ApplyRightJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].TraceID != "right-001" {
+		t.Fatalf("expected right-001, got %s", results[0].TraceID)
+	}
+
+	if results[1].TraceID != "right-002" {
+		t.Fatalf("expected right-002, got %s", results[1].TraceID)
+	}
+
+	if results[0].Attributes["left_account_id"] != "account-001" {
+		t.Fatal("expected matched right result to contain left attributes")
+	}
+
+	if _, exists := results[1].Attributes["left_account_id"]; exists {
+		t.Fatal("expected unmatched right result to have no left attributes")
+	}
+}
+
+func TestApplyRightJoinPreservesAllRightResultsWhenLeftIsEmpty(t *testing.T) {
+	left := []ExecutionContext{}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+		},
+		{
+			TraceID: "right-002",
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "trace_id",
+		RightField: "trace_id",
+	}
+
+	results := ApplyRightJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].TraceID != "right-001" {
+		t.Fatalf("expected right-001, got %s", results[0].TraceID)
+	}
+
+	if results[1].TraceID != "right-002" {
+		t.Fatalf("expected right-002, got %s", results[1].TraceID)
+	}
+}
+
+func TestApplyRightJoinReturnsEmptyWhenRightIsEmpty(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+		},
+	}
+
+	right := []ExecutionContext{}
+
+	condition := JoinCondition{
+		LeftField:  "trace_id",
+		RightField: "trace_id",
+	}
+
+	results := ApplyRightJoin(left, right, condition)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplyRightJoinSupportsMultipleLeftMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"source":     "transaction",
+			},
+		},
+		{
+			TraceID: "left-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"source":     "payment",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "account_id",
+		RightField: "account_id",
+	}
+
+	results := ApplyRightJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["left_source"] != "transaction" {
+		t.Fatalf("expected transaction, got %s", results[0].Attributes["left_source"])
+	}
+
+	if results[1].Attributes["left_source"] != "payment" {
+		t.Fatalf("expected payment, got %s", results[1].Attributes["left_source"])
+	}
+}
+
+func TestApplyJoinSupportsMultipleRightMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "USD",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "account_id",
+		RightField: "account_id",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_currency"] != "GBP" {
+		t.Fatalf("expected GBP, got %s", results[0].Attributes["right_currency"])
+	}
+
+	if results[1].Attributes["right_currency"] != "USD" {
+		t.Fatalf("expected USD, got %s", results[1].Attributes["right_currency"])
+	}
+}

@@ -28,8 +28,10 @@ func ApplyJoin(
 
 				joined := leftCtx
 
-				if joined.Attributes == nil {
-					joined.Attributes = map[string]string{}
+				joined.Attributes = make(map[string]string)
+
+				for key, value := range leftCtx.Attributes {
+					joined.Attributes[key] = value
 				}
 
 				for key, value := range rightCtx.Attributes {
@@ -42,6 +44,47 @@ func ApplyJoin(
 
 		if !matched {
 			results = append(results, leftCtx)
+		}
+	}
+
+	return results
+}
+
+func ApplyRightJoin(
+	left []ExecutionContext,
+	right []ExecutionContext,
+	condition JoinCondition,
+) []ExecutionContext {
+	var results []ExecutionContext
+
+	for _, rightCtx := range right {
+		rightValue := resolveJoinField(rightCtx, condition.RightField)
+		matched := false
+
+		for _, leftCtx := range left {
+			leftValue := resolveJoinField(leftCtx, condition.LeftField)
+
+			if rightValue == leftValue {
+				matched = true
+
+				joined := rightCtx
+
+				joined.Attributes = make(map[string]string)
+
+				for key, value := range rightCtx.Attributes {
+					joined.Attributes[key] = value
+				}
+
+				for key, value := range leftCtx.Attributes {
+					joined.Attributes["left_"+key] = value
+				}
+
+				results = append(results, joined)
+			}
+		}
+
+		if !matched {
+			results = append(results, rightCtx)
 		}
 	}
 
