@@ -140,3 +140,30 @@ func ApplyFullOuterJoin(
 
 	return results
 }
+
+func ApplyCrossJoin(
+	left []ExecutionContext,
+	right []ExecutionContext,
+) []ExecutionContext {
+	var results []ExecutionContext
+
+	for _, leftCtx := range left {
+		for _, rightCtx := range right {
+			joined := leftCtx
+
+			joined.Attributes = make(map[string]string)
+
+			for key, value := range leftCtx.Attributes {
+				joined.Attributes[key] = value
+			}
+
+			for key, value := range rightCtx.Attributes {
+				joined.Attributes["right_"+key] = value
+			}
+
+			results = append(results, joined)
+		}
+	}
+
+	return results
+}

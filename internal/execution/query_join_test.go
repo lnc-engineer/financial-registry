@@ -735,3 +735,165 @@ func TestApplyFullOuterJoinSupportsMultipleMatches(t *testing.T) {
 		t.Fatalf("expected 4 results, got %d", len(results))
 	}
 }
+
+func TestApplyCrossJoinProducesCartesianProduct(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "left-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"currency": "GBP",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"currency": "USD",
+			},
+		},
+	}
+
+	results := ApplyCrossJoin(left, right)
+
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+}
+
+func TestApplyCrossJoinPreservesLeftAttributes(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"currency": "GBP",
+			},
+		},
+	}
+
+	results := ApplyCrossJoin(left, right)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["account_id"] != "account-001" {
+		t.Fatalf("expected account-001, got %s", results[0].Attributes["account_id"])
+	}
+}
+
+func TestApplyCrossJoinPrefixesRightAttributes(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"currency": "GBP",
+			},
+		},
+	}
+
+	results := ApplyCrossJoin(left, right)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_currency"] != "GBP" {
+		t.Fatalf("expected GBP, got %s", results[0].Attributes["right_currency"])
+	}
+}
+
+func TestApplyCrossJoinPreservesAllCombinations(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+		},
+		{
+			TraceID: "left-002",
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+		},
+		{
+			TraceID: "right-002",
+		},
+		{
+			TraceID: "right-003",
+		},
+	}
+
+	results := ApplyCrossJoin(left, right)
+
+	if len(results) != 6 {
+		t.Fatalf("expected 6 results, got %d", len(results))
+	}
+}
+
+func TestApplyCrossJoinReturnsEmptyWhenLeftIsEmpty(t *testing.T) {
+	left := []ExecutionContext{}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+		},
+		{
+			TraceID: "right-002",
+		},
+	}
+
+	results := ApplyCrossJoin(left, right)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplyCrossJoinReturnsEmptyWhenRightIsEmpty(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+		},
+		{
+			TraceID: "left-002",
+		},
+	}
+
+	right := []ExecutionContext{}
+
+	results := ApplyCrossJoin(left, right)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
