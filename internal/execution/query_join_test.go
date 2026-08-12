@@ -897,3 +897,89 @@ func TestApplyCrossJoinReturnsEmptyWhenRightIsEmpty(t *testing.T) {
 		t.Fatalf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestApplySelfJoinMatchesRecords(t *testing.T) {
+	contexts := []ExecutionContext{
+		{
+			TraceID: "trace-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"role":       "transaction",
+			},
+		},
+		{
+			TraceID: "trace-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+				"role":       "payment",
+			},
+		},
+	}
+
+	results := ApplySelfJoin(
+		contexts,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["role"] != "transaction" {
+		t.Fatalf("expected transaction role, got %s", results[0].Attributes["role"])
+	}
+
+	if results[0].Attributes["right_role"] != "transaction" {
+		t.Fatalf("expected right_transaction role, got %s", results[0].Attributes["right_role"])
+	}
+}
+
+func TestApplySelfJoinSupportsMultipleMatches(t *testing.T) {
+	contexts := []ExecutionContext{
+		{
+			TraceID: "trace-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"role":       "transaction",
+			},
+		},
+		{
+			TraceID: "trace-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"role":       "payment",
+			},
+		},
+	}
+
+	results := ApplySelfJoin(
+		contexts,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+}
+
+func TestApplySelfJoinReturnsEmptyWhenInputIsEmpty(t *testing.T) {
+	contexts := []ExecutionContext{}
+
+	results := ApplySelfJoin(
+		contexts,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}

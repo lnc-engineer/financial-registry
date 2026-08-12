@@ -167,3 +167,10 @@ func ApplyCrossJoin(
 
 	return results
 }
+
+func ApplySelfJoin(
+	contexts []ExecutionContext,
+	condition JoinCondition,
+) []ExecutionContext {
+	return ApplyJoin(contexts, contexts, condition)
+}
