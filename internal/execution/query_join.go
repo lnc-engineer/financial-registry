@@ -174,3 +174,54 @@ func ApplySelfJoin(
 ) []ExecutionContext {
 	return ApplyJoin(contexts, contexts, condition)
 }
+
+func ApplyNaturalJoin(
+	left []ExecutionContext,
+	right []ExecutionContext,
+) []ExecutionContext {
+	var results []ExecutionContext
+
+	for _, leftCtx := range left {
+		for _, rightCtx := range right {
+			matches := true
+			hasCommonField := false
+
+			for key, leftValue := range leftCtx.Attributes {
+				rightValue, exists := rightCtx.Attributes[key]
+
+				if !exists {
+					continue
+				}
+
+				hasCommonField = true
+
+				if leftValue != rightValue {
+					matches = false
+					break
+				}
+			}
+
+			if !hasCommonField {
+				matches = true
+			}
+
+			if matches {
+				joined := leftCtx
+
+				joined.Attributes = make(map[string]string)
+
+				for key, value := range leftCtx.Attributes {
+					joined.Attributes[key] = value
+				}
+
+				for key, value := range rightCtx.Attributes {
+					joined.Attributes["right_"+key] = value
+				}
+
+				results = append(results, joined)
+			}
+		}
+	}
+
+	return results
+}

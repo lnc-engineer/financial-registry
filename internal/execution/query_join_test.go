@@ -983,3 +983,179 @@ func TestApplySelfJoinReturnsEmptyWhenInputIsEmpty(t *testing.T) {
 		t.Fatalf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestApplyNaturalJoinMatchesSharedFields(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"role":       "transaction",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+	}
+
+	results := ApplyNaturalJoin(left, right)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["role"] != "transaction" {
+		t.Fatalf("expected transaction role, got %s", results[0].Attributes["role"])
+	}
+
+	if results[0].Attributes["right_currency"] != "GBP" {
+		t.Fatalf("expected GBP currency, got %s", results[0].Attributes["right_currency"])
+	}
+}
+
+func TestApplyNaturalJoinRejectsMismatchedSharedFields(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	results := ApplyNaturalJoin(left, right)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplyNaturalJoinRequiresAllSharedFieldsToMatch(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "USD",
+			},
+		},
+	}
+
+	results := ApplyNaturalJoin(left, right)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplyNaturalJoinSupportsMultipleMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "USD",
+			},
+		},
+	}
+
+	results := ApplyNaturalJoin(left, right)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_currency"] != "GBP" {
+		t.Fatalf("expected GBP, got %s", results[0].Attributes["right_currency"])
+	}
+
+	if results[1].Attributes["right_currency"] != "USD" {
+		t.Fatalf("expected USD, got %s", results[1].Attributes["right_currency"])
+	}
+}
+
+func TestApplyNaturalJoinWithNoCommonFieldsProducesCartesianProduct(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"currency": "GBP",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"currency": "USD",
+			},
+		},
+	}
+
+	results := ApplyNaturalJoin(left, right)
+
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+}
+
+func TestApplyNaturalJoinReturnsEmptyWhenInputIsEmpty(t *testing.T) {
+	left := []ExecutionContext{}
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	results := ApplyNaturalJoin(left, right)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
