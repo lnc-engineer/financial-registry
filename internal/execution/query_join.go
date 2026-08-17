@@ -225,3 +225,27 @@ func ApplyNaturalJoin(
 
 	return results
 }
+
+// ApplyLeftAntiJoin returns left contexts that have no match in right.
+func ApplyLeftAntiJoin(
+	left []ExecutionContext,
+	right []ExecutionContext,
+	condition JoinCondition,
+) []ExecutionContext {
+	var results []ExecutionContext
+	for _, leftCtx := range left {
+		leftValue := resolveJoinField(leftCtx, condition.LeftField)
+		matched := false
+		for _, rightCtx := range right {
+			rightValue := resolveJoinField(rightCtx, condition.RightField)
+			if leftValue == rightValue {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			results = append(results, leftCtx)
+		}
+	}
+	return results
+}

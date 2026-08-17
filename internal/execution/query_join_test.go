@@ -1159,3 +1159,32 @@ func TestApplyNaturalJoinReturnsEmptyWhenInputIsEmpty(t *testing.T) {
 		t.Fatalf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestApplyLeftAntiJoinExcludesMatchedRecords(t *testing.T) {
+	left := []ExecutionContext{
+		{TraceID: "left-001", Attributes: map[string]string{"account_id": "account-001"}},
+		{TraceID: "left-002", Attributes: map[string]string{"account_id": "account-002"}},
+	}
+	right := []ExecutionContext{
+		{TraceID: "right-001", Attributes: map[string]string{"account_id": "account-001"}},
+	}
+	results := ApplyLeftAntiJoin(left, right, JoinCondition{LeftField: "account_id", RightField: "account_id"})
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].TraceID != "left-002" {
+		t.Fatalf("expected left-002, got %s", results[0].TraceID)
+	}
+}
+
+func TestApplyLeftAntiJoinReturnsAllLeftWhenRightIsEmpty(t *testing.T) {
+	left := []ExecutionContext{
+		{TraceID: "left-001"},
+		{TraceID: "left-002"},
+	}
+	right := []ExecutionContext{}
+	results := ApplyLeftAntiJoin(left, right, JoinCondition{LeftField: "trace_id", RightField: "trace_id"})
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+}
