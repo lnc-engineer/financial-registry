@@ -249,3 +249,32 @@ func ApplyLeftAntiJoin(
 	}
 	return results
 }
+
+// ApplyRightAntiJoin returns right contexts that have no match in left.
+func ApplyRightAntiJoin(
+	left []ExecutionContext,
+	right []ExecutionContext,
+	condition JoinCondition,
+) []ExecutionContext {
+	var results []ExecutionContext
+
+	for _, rightCtx := range right {
+		rightValue := resolveJoinField(rightCtx, condition.RightField)
+		matched := false
+
+		for _, leftCtx := range left {
+			leftValue := resolveJoinField(leftCtx, condition.LeftField)
+
+			if rightValue == leftValue {
+				matched = true
+				break
+			}
+		}
+
+		if !matched {
+			results = append(results, rightCtx)
+		}
+	}
+
+	return results
+}
