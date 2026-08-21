@@ -1271,3 +1271,29 @@ func TestApplyRightAntiJoinReturnsAllRightWhenLeftIsEmpty(t *testing.T) {
 		t.Fatalf("expected right-002, got %s", results[1].TraceID)
 	}
 }
+
+func TestApplyRightAntiJoinReturnsEmptyWhenRightIsEmpty(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{}
+
+	results := ApplyRightAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
