@@ -1297,3 +1297,309 @@ func TestApplyRightAntiJoinReturnsEmptyWhenRightIsEmpty(t *testing.T) {
 		t.Fatalf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestApplyLeftAntiJoinReturnsAllLeftWhenThereAreNoMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "left-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-003",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-004",
+			},
+		},
+	}
+
+	results := ApplyLeftAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].TraceID != "left-001" {
+		t.Fatalf("expected left-001, got %s", results[0].TraceID)
+	}
+
+	if results[1].TraceID != "left-002" {
+		t.Fatalf("expected left-002, got %s", results[1].TraceID)
+	}
+}
+
+func TestApplyRightAntiJoinReturnsAllRightWhenThereAreNoMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "left-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-003",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-004",
+			},
+		},
+	}
+
+	results := ApplyRightAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].TraceID != "right-001" {
+		t.Fatalf("expected right-001, got %s", results[0].TraceID)
+	}
+
+	if results[1].TraceID != "right-002" {
+		t.Fatalf("expected right-002, got %s", results[1].TraceID)
+	}
+}
+
+func TestApplyLeftAntiJoinPreservesAttributes(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+				"status":     "active",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	results := ApplyLeftAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["account_id"] != "account-001" {
+		t.Fatalf("expected account-001, got %s", results[0].Attributes["account_id"])
+	}
+
+	if results[0].Attributes["currency"] != "GBP" {
+		t.Fatalf("expected GBP, got %s", results[0].Attributes["currency"])
+	}
+
+	if results[0].Attributes["status"] != "active" {
+		t.Fatalf("expected active, got %s", results[0].Attributes["status"])
+	}
+
+	if _, exists := results[0].Attributes["right_account_id"]; exists {
+		t.Fatal("expected no right attributes in anti join result")
+	}
+}
+
+func TestApplyRightAntiJoinPreservesAttributes(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+				"currency":   "USD",
+				"status":     "pending",
+			},
+		},
+	}
+
+	results := ApplyRightAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["account_id"] != "account-002" {
+		t.Fatalf("expected account-002, got %s", results[0].Attributes["account_id"])
+	}
+
+	if results[0].Attributes["currency"] != "USD" {
+		t.Fatalf("expected USD, got %s", results[0].Attributes["currency"])
+	}
+
+	if results[0].Attributes["status"] != "pending" {
+		t.Fatalf("expected pending, got %s", results[0].Attributes["status"])
+	}
+
+	if _, exists := results[0].Attributes["left_account_id"]; exists {
+		t.Fatal("expected no left attributes in anti join result")
+	}
+}
+
+func TestApplyLeftAntiJoinExcludesRecordsWithMultipleMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "left-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	results := ApplyLeftAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].TraceID != "left-002" {
+		t.Fatalf("expected left-002, got %s", results[0].TraceID)
+	}
+}
+
+func TestApplyRightAntiJoinExcludesRecordsWithMultipleMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "left-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-002",
+			},
+		},
+	}
+
+	results := ApplyRightAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].TraceID != "right-002" {
+		t.Fatalf("expected right-002, got %s", results[0].TraceID)
+	}
+}
