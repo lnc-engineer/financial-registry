@@ -278,3 +278,32 @@ func ApplyRightAntiJoin(
 
 	return results
 }
+
+// ApplySemiJoin returns left contexts that have at least one match in right.
+func ApplySemiJoin(
+	left []ExecutionContext,
+	right []ExecutionContext,
+	condition JoinCondition,
+) []ExecutionContext {
+	var results []ExecutionContext
+
+	for _, leftCtx := range left {
+		leftValue := resolveJoinField(leftCtx, condition.LeftField)
+		matched := false
+
+		for _, rightCtx := range right {
+			rightValue := resolveJoinField(rightCtx, condition.RightField)
+
+			if leftValue == rightValue {
+				matched = true
+				break
+			}
+		}
+
+		if matched {
+			results = append(results, leftCtx)
+		}
+	}
+
+	return results
+}

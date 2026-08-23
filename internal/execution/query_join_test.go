@@ -1603,3 +1603,162 @@ func TestApplyRightAntiJoinExcludesRecordsWithMultipleMatches(t *testing.T) {
 		t.Fatalf("expected right-002, got %s", results[0].TraceID)
 	}
 }
+
+func TestApplySemiJoin(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "1", "name": "Alice"}},
+		{Attributes: map[string]string{"id": "2", "name": "Bob"}},
+		{Attributes: map[string]string{"id": "3", "name": "Charlie"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "1", "status": "active"}},
+		{Attributes: map[string]string{"id": "3", "status": "active"}},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplySemiJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "1" {
+		t.Fatalf("expected first result id 1, got %q", results[0].Attributes["id"])
+	}
+
+	if results[1].Attributes["id"] != "3" {
+		t.Fatalf("expected second result id 3, got %q", results[1].Attributes["id"])
+	}
+
+	if _, exists := results[0].Attributes["right_status"]; exists {
+		t.Fatal("semi join should not include right-side attributes")
+	}
+}
+
+func TestApplySemiJoinMultipleRightMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "1", "name": "Alice"}},
+		{Attributes: map[string]string{"id": "2", "name": "Bob"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "1", "status": "active"}},
+		{Attributes: map[string]string{"id": "1", "status": "pending"}},
+		{Attributes: map[string]string{"id": "2", "status": "active"}},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplySemiJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "1" {
+		t.Fatalf("expected first result id 1, got %q", results[0].Attributes["id"])
+	}
+
+	if results[1].Attributes["id"] != "2" {
+		t.Fatalf("expected second result id 2, got %q", results[1].Attributes["id"])
+	}
+}
+
+func TestApplySemiJoinNoMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "1"}},
+		{Attributes: map[string]string{"id": "2"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "3"}},
+		{Attributes: map[string]string{"id": "4"}},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplySemiJoin(left, right, condition)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplySemiJoinEmptyRight(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "1"}},
+		{Attributes: map[string]string{"id": "2"}},
+	}
+
+	var right []ExecutionContext
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplySemiJoin(left, right, condition)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplySemiJoinPreservesLeftAttributes(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":         "1",
+				"name":       "Alice",
+				"department": "finance",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":     "1",
+				"status": "active",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplySemiJoin(left, right, condition)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "1" {
+		t.Fatalf("expected id 1, got %q", results[0].Attributes["id"])
+	}
+
+	if results[0].Attributes["name"] != "Alice" {
+		t.Fatalf("expected name Alice, got %q", results[0].Attributes["name"])
+	}
+
+	if results[0].Attributes["department"] != "finance" {
+		t.Fatalf("expected department finance, got %q", results[0].Attributes["department"])
+	}
+
+	if _, exists := results[0].Attributes["right_status"]; exists {
+		t.Fatal("semi join should not include right-side attributes")
+	}
+}
