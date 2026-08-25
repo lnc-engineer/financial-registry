@@ -195,6 +195,255 @@ func TestApplyJoinReturnsEmptyWhenLeftIsEmpty(t *testing.T) {
 	}
 }
 
+func TestApplyJoinSupportsMultipleRightMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "USD",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "account_id",
+		RightField: "account_id",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_currency"] != "GBP" {
+		t.Fatalf("expected GBP, got %s", results[0].Attributes["right_currency"])
+	}
+
+	if results[1].Attributes["right_currency"] != "USD" {
+		t.Fatalf("expected USD, got %s", results[1].Attributes["right_currency"])
+	}
+}
+
+func TestApplyJoinMatchesMultipleConditions(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+				"status":     "active",
+			},
+		},
+	}
+
+	results := ApplyJoin(
+		left,
+		right,
+		JoinCondition{
+			Conditions: []JoinPredicate{
+				{
+					LeftField:  "account_id",
+					RightField: "account_id",
+				},
+				{
+					LeftField:  "currency",
+					RightField: "currency",
+				},
+			},
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_status"] != "active" {
+		t.Fatalf("expected active status, got %s", results[0].Attributes["right_status"])
+	}
+}
+
+func TestApplyJoinRejectsWhenOneConditionFails(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "USD",
+			},
+		},
+	}
+
+	results := ApplyJoin(
+		left,
+		right,
+		JoinCondition{
+			Conditions: []JoinPredicate{
+				{
+					LeftField:  "account_id",
+					RightField: "account_id",
+				},
+				{
+					LeftField:  "currency",
+					RightField: "currency",
+				},
+			},
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].TraceID != "left-001" {
+		t.Fatalf("expected unmatched left context, got %s", results[0].TraceID)
+	}
+
+	if _, exists := results[0].Attributes["right_currency"]; exists {
+		t.Fatal("expected no right attributes when one join condition fails")
+	}
+}
+
+func TestApplyJoinMultipleConditionsSupportsMultipleMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "left-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "right-001",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "USD",
+			},
+		},
+		{
+			TraceID: "right-002",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+				"status":     "active",
+			},
+		},
+		{
+			TraceID: "right-003",
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"currency":   "GBP",
+				"status":     "pending",
+			},
+		},
+	}
+
+	results := ApplyJoin(
+		left,
+		right,
+		JoinCondition{
+			Conditions: []JoinPredicate{
+				{
+					LeftField:  "account_id",
+					RightField: "account_id",
+				},
+				{
+					LeftField:  "currency",
+					RightField: "currency",
+				},
+			},
+		},
+	)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_status"] != "active" {
+		t.Fatalf("expected active, got %s", results[0].Attributes["right_status"])
+	}
+
+	if results[1].Attributes["right_status"] != "pending" {
+		t.Fatalf("expected pending, got %s", results[1].Attributes["right_status"])
+	}
+}
+
+func TestApplyJoinPreservesLegacySingleConditionBehavior(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"account_id": "account-001",
+				"status":     "active",
+			},
+		},
+	}
+
+	results := ApplyJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["right_status"] != "active" {
+		t.Fatalf("expected active, got %s", results[0].Attributes["right_status"])
+	}
+}
+
 func TestApplyRightJoinMatchesRecords(t *testing.T) {
 	left := []ExecutionContext{
 		{
@@ -384,53 +633,6 @@ func TestApplyRightJoinSupportsMultipleLeftMatches(t *testing.T) {
 
 	if results[1].Attributes["left_source"] != "payment" {
 		t.Fatalf("expected payment, got %s", results[1].Attributes["left_source"])
-	}
-}
-
-func TestApplyJoinSupportsMultipleRightMatches(t *testing.T) {
-	left := []ExecutionContext{
-		{
-			TraceID: "left-001",
-			Attributes: map[string]string{
-				"account_id": "account-001",
-			},
-		},
-	}
-
-	right := []ExecutionContext{
-		{
-			TraceID: "right-001",
-			Attributes: map[string]string{
-				"account_id": "account-001",
-				"currency":   "GBP",
-			},
-		},
-		{
-			TraceID: "right-002",
-			Attributes: map[string]string{
-				"account_id": "account-001",
-				"currency":   "USD",
-			},
-		},
-	}
-
-	condition := JoinCondition{
-		LeftField:  "account_id",
-		RightField: "account_id",
-	}
-
-	results := ApplyJoin(left, right, condition)
-
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
-	}
-
-	if results[0].Attributes["right_currency"] != "GBP" {
-		t.Fatalf("expected GBP, got %s", results[0].Attributes["right_currency"])
-	}
-
-	if results[1].Attributes["right_currency"] != "USD" {
-		t.Fatalf("expected USD, got %s", results[1].Attributes["right_currency"])
 	}
 }
 
@@ -1168,10 +1370,20 @@ func TestApplyLeftAntiJoinExcludesMatchedRecords(t *testing.T) {
 	right := []ExecutionContext{
 		{TraceID: "right-001", Attributes: map[string]string{"account_id": "account-001"}},
 	}
-	results := ApplyLeftAntiJoin(left, right, JoinCondition{LeftField: "account_id", RightField: "account_id"})
+
+	results := ApplyLeftAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "account_id",
+			RightField: "account_id",
+		},
+	)
+
 	if len(results) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
+
 	if results[0].TraceID != "left-002" {
 		t.Fatalf("expected left-002, got %s", results[0].TraceID)
 	}
@@ -1183,7 +1395,16 @@ func TestApplyLeftAntiJoinReturnsAllLeftWhenRightIsEmpty(t *testing.T) {
 		{TraceID: "left-002"},
 	}
 	right := []ExecutionContext{}
-	results := ApplyLeftAntiJoin(left, right, JoinCondition{LeftField: "trace_id", RightField: "trace_id"})
+
+	results := ApplyLeftAntiJoin(
+		left,
+		right,
+		JoinCondition{
+			LeftField:  "trace_id",
+			RightField: "trace_id",
+		},
+	)
+
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}

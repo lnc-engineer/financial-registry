@@ -1,12 +1,81 @@
 package execution
 
-type JoinCondition struct {
+type JoinPredicate struct {
 	LeftField  string
 	RightField string
 }
 
+type JoinCondition struct {
+	// LeftField and RightField preserve compatibility with single-condition joins.
+	LeftField  string
+	RightField string
+
+	// Conditions supports multi-condition joins.
+	Conditions []JoinPredicate
+}
+
 func resolveJoinField(ctx ExecutionContext, field string) string {
 	return resolveField(ctx, field)
+}
+
+func joinPredicates(condition JoinCondition) []JoinPredicate {
+	if len(condition.Conditions) > 0 {
+		return condition.Conditions
+	}
+
+	return []JoinPredicate{
+		{
+			LeftField:  condition.LeftField,
+			RightField: condition.RightField,
+		},
+	}
+}
+
+func joinContextsMatch(
+	leftCtx ExecutionContext,
+	rightCtx ExecutionContext,
+	condition JoinCondition,
+) bool {
+	for _, predicate := range joinPredicates(condition) {
+		leftValue := resolveJoinField(leftCtx, predicate.LeftField)
+		rightValue := resolveJoinField(rightCtx, predicate.RightField)
+
+		if leftValue != rightValue {
+			return false
+		}
+	}
+
+	return true
+}
+
+func joinContexts(leftCtx, rightCtx ExecutionContext) ExecutionContext {
+	joined := leftCtx
+	joined.Attributes = make(map[string]string)
+
+	for key, value := range leftCtx.Attributes {
+		joined.Attributes[key] = value
+	}
+
+	for key, value := range rightCtx.Attributes {
+		joined.Attributes["right_"+key] = value
+	}
+
+	return joined
+}
+
+func joinContextsRight(leftCtx, rightCtx ExecutionContext) ExecutionContext {
+	joined := rightCtx
+	joined.Attributes = make(map[string]string)
+
+	for key, value := range rightCtx.Attributes {
+		joined.Attributes[key] = value
+	}
+
+	for key, value := range leftCtx.Attributes {
+		joined.Attributes["left_"+key] = value
+	}
+
+	return joined
 }
 
 func ApplyJoin(
@@ -17,28 +86,12 @@ func ApplyJoin(
 	var results []ExecutionContext
 
 	for _, leftCtx := range left {
-		leftValue := resolveJoinField(leftCtx, condition.LeftField)
 		matched := false
 
 		for _, rightCtx := range right {
-			rightValue := resolveJoinField(rightCtx, condition.RightField)
-
-			if leftValue == rightValue {
+			if joinContextsMatch(leftCtx, rightCtx, condition) {
 				matched = true
-
-				joined := leftCtx
-
-				joined.Attributes = make(map[string]string)
-
-				for key, value := range leftCtx.Attributes {
-					joined.Attributes[key] = value
-				}
-
-				for key, value := range rightCtx.Attributes {
-					joined.Attributes["right_"+key] = value
-				}
-
-				results = append(results, joined)
+				results = append(results, joinContexts(leftCtx, rightCtx))
 			}
 		}
 
@@ -58,28 +111,12 @@ func ApplyRightJoin(
 	var results []ExecutionContext
 
 	for _, rightCtx := range right {
-		rightValue := resolveJoinField(rightCtx, condition.RightField)
 		matched := false
 
 		for _, leftCtx := range left {
-			leftValue := resolveJoinField(leftCtx, condition.LeftField)
-
-			if rightValue == leftValue {
+			if joinContextsMatch(leftCtx, rightCtx, condition) {
 				matched = true
-
-				joined := rightCtx
-
-				joined.Attributes = make(map[string]string)
-
-				for key, value := range rightCtx.Attributes {
-					joined.Attributes[key] = value
-				}
-
-				for key, value := range leftCtx.Attributes {
-					joined.Attributes["left_"+key] = value
-				}
-
-				results = append(results, joined)
+				results = append(results, joinContextsRight(leftCtx, rightCtx))
 			}
 		}
 
@@ -101,29 +138,14 @@ func ApplyFullOuterJoin(
 	matchedRight := make(map[int]bool)
 
 	for _, leftCtx := range left {
-		leftValue := resolveJoinField(leftCtx, condition.LeftField)
 		matched := false
 
 		for rightIndex, rightCtx := range right {
-			rightValue := resolveJoinField(rightCtx, condition.RightField)
-
-			if leftValue == rightValue {
+			if joinContextsMatch(leftCtx, rightCtx, condition) {
 				matched = true
 				matchedRight[rightIndex] = true
 
-				joined := leftCtx
-
-				joined.Attributes = make(map[string]string)
-
-				for key, value := range leftCtx.Attributes {
-					joined.Attributes[key] = value
-				}
-
-				for key, value := range rightCtx.Attributes {
-					joined.Attributes["right_"+key] = value
-				}
-
-				results = append(results, joined)
+				results = append(results, joinContexts(leftCtx, rightCtx))
 			}
 		}
 
@@ -149,19 +171,7 @@ func ApplyCrossJoin(
 
 	for _, leftCtx := range left {
 		for _, rightCtx := range right {
-			joined := leftCtx
-
-			joined.Attributes = make(map[string]string)
-
-			for key, value := range leftCtx.Attributes {
-				joined.Attributes[key] = value
-			}
-
-			for key, value := range rightCtx.Attributes {
-				joined.Attributes["right_"+key] = value
-			}
-
-			results = append(results, joined)
+			results = append(results, joinContexts(leftCtx, rightCtx))
 		}
 	}
 
@@ -206,19 +216,7 @@ func ApplyNaturalJoin(
 			}
 
 			if matches {
-				joined := leftCtx
-
-				joined.Attributes = make(map[string]string)
-
-				for key, value := range leftCtx.Attributes {
-					joined.Attributes[key] = value
-				}
-
-				for key, value := range rightCtx.Attributes {
-					joined.Attributes["right_"+key] = value
-				}
-
-				results = append(results, joined)
+				results = append(results, joinContexts(leftCtx, rightCtx))
 			}
 		}
 	}
@@ -233,20 +231,22 @@ func ApplyLeftAntiJoin(
 	condition JoinCondition,
 ) []ExecutionContext {
 	var results []ExecutionContext
+
 	for _, leftCtx := range left {
-		leftValue := resolveJoinField(leftCtx, condition.LeftField)
 		matched := false
+
 		for _, rightCtx := range right {
-			rightValue := resolveJoinField(rightCtx, condition.RightField)
-			if leftValue == rightValue {
+			if joinContextsMatch(leftCtx, rightCtx, condition) {
 				matched = true
 				break
 			}
 		}
+
 		if !matched {
 			results = append(results, leftCtx)
 		}
 	}
+
 	return results
 }
 
@@ -259,13 +259,10 @@ func ApplyRightAntiJoin(
 	var results []ExecutionContext
 
 	for _, rightCtx := range right {
-		rightValue := resolveJoinField(rightCtx, condition.RightField)
 		matched := false
 
 		for _, leftCtx := range left {
-			leftValue := resolveJoinField(leftCtx, condition.LeftField)
-
-			if rightValue == leftValue {
+			if joinContextsMatch(leftCtx, rightCtx, condition) {
 				matched = true
 				break
 			}
@@ -288,13 +285,10 @@ func ApplySemiJoin(
 	var results []ExecutionContext
 
 	for _, leftCtx := range left {
-		leftValue := resolveJoinField(leftCtx, condition.LeftField)
 		matched := false
 
 		for _, rightCtx := range right {
-			rightValue := resolveJoinField(rightCtx, condition.RightField)
-
-			if leftValue == rightValue {
+			if joinContextsMatch(leftCtx, rightCtx, condition) {
 				matched = true
 				break
 			}
