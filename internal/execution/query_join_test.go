@@ -2239,3 +2239,175 @@ func TestApplyRightAntiJoinMatchesMultipleConditions(t *testing.T) {
 		)
 	}
 }
+
+func TestApplyJoinOneToManyMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "L1",
+				"code": "A",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "R1",
+				"code": "A",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":   "R2",
+				"code": "A",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "code",
+		RightField: "code",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 joined results, got %d", len(results))
+	}
+}
+
+func TestApplyJoinManyToOneMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "L1",
+				"code": "A",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":   "L2",
+				"code": "A",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "R1",
+				"code": "A",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "code",
+		RightField: "code",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 joined results, got %d", len(results))
+	}
+}
+
+func TestApplyJoinManyToManyMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "L1",
+				"code": "A",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":   "L2",
+				"code": "A",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "R1",
+				"code": "A",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":   "R2",
+				"code": "A",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "code",
+		RightField: "code",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 4 {
+		t.Fatalf("expected 4 joined results, got %d", len(results))
+	}
+}
+
+func TestApplyJoinPreservesUnmatchedLeftRows(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "L1",
+				"code": "A",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":   "L2",
+				"code": "B",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":   "R1",
+				"code": "A",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":   "R2",
+				"code": "C",
+			},
+		},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "code",
+		RightField: "code",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "L1" {
+		t.Fatalf("expected first result to have left id L1, got %q", results[0].Attributes["id"])
+	}
+
+	if results[0].Attributes["right_id"] != "R1" {
+		t.Fatalf("expected first result to have right id R1, got %q", results[0].Attributes["right_id"])
+	}
+
+	if results[1].Attributes["id"] != "L2" {
+		t.Fatalf("expected second result to preserve unmatched left id L2, got %q", results[1].Attributes["id"])
+	}
+}
