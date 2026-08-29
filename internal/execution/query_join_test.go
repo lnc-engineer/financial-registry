@@ -2411,3 +2411,71 @@ func TestApplyJoinPreservesUnmatchedLeftRows(t *testing.T) {
 		t.Fatalf("expected second result to preserve unmatched left id L2, got %q", results[1].Attributes["id"])
 	}
 }
+
+func TestApplyJoinOneToManyCardinality(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 joined results, got %d", len(results))
+	}
+}
+
+func TestApplyJoinManyToManyCardinality(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 4 {
+		t.Fatalf("expected 4 joined results, got %d", len(results))
+	}
+}
+
+func TestApplyJoinUnmatchedRowsDoNotCreateMatches(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	condition := JoinCondition{
+		LeftField:  "id",
+		RightField: "id",
+	}
+
+	results := ApplyJoin(left, right, condition)
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 joined results, got %d", len(results))
+	}
+}
