@@ -259,3 +259,150 @@ func TestApplyIntersectDeduplicatesRepeatedValuesOnBothSides(t *testing.T) {
 		t.Fatalf("expected first B context, got %s", results[1].Attributes["source"])
 	}
 }
+
+func TestApplyIntersectPreservesLeftOrder(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "C"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "B"}},
+		{Attributes: map[string]string{"id": "C"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	results := ApplyIntersect(left, right, "id")
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+
+	expected := []string{"C", "A", "B"}
+
+	for i, want := range expected {
+		if results[i].Attributes["id"] != want {
+			t.Fatalf(
+				"expected result %d to be %s, got %s",
+				i,
+				want,
+				results[i].Attributes["id"],
+			)
+		}
+	}
+}
+
+func TestApplyIntersectRightOrderDoesNotAffectResults(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "B"}},
+		{Attributes: map[string]string{"id": "C"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "C"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	results := ApplyIntersect(left, right, "id")
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+
+	expected := []string{"A", "B", "C"}
+
+	for i, want := range expected {
+		if results[i].Attributes["id"] != want {
+			t.Fatalf(
+				"expected result %d to be %s, got %s",
+				i,
+				want,
+				results[i].Attributes["id"],
+			)
+		}
+	}
+}
+
+func TestApplyIntersectPreservesFirstMatchingLeftOrderWithDuplicates(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "B", "source": "first-b"}},
+		{Attributes: map[string]string{"id": "A", "source": "first-a"}},
+		{Attributes: map[string]string{"id": "B", "source": "second-b"}},
+		{Attributes: map[string]string{"id": "C", "source": "first-c"}},
+		{Attributes: map[string]string{"id": "A", "source": "second-a"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "C"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	results := ApplyIntersect(left, right, "id")
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+
+	expectedIDs := []string{"B", "A", "C"}
+	expectedSources := []string{"first-b", "first-a", "first-c"}
+
+	for i := range expectedIDs {
+		if results[i].Attributes["id"] != expectedIDs[i] {
+			t.Fatalf(
+				"expected result %d id %s, got %s",
+				i,
+				expectedIDs[i],
+				results[i].Attributes["id"],
+			)
+		}
+
+		if results[i].Attributes["source"] != expectedSources[i] {
+			t.Fatalf(
+				"expected result %d source %s, got %s",
+				i,
+				expectedSources[i],
+				results[i].Attributes["source"],
+			)
+		}
+	}
+}
+
+func TestApplyIntersectPreservesOrderWhenUnmatchedRowsAreInterleaved(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "X"}},
+		{Attributes: map[string]string{"id": "C"}},
+		{Attributes: map[string]string{"id": "Y"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "Z"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "B"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "C"}},
+	}
+
+	results := ApplyIntersect(left, right, "id")
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+
+	expected := []string{"C", "A", "B"}
+
+	for i, want := range expected {
+		if results[i].Attributes["id"] != want {
+			t.Fatalf(
+				"expected result %d to be %s, got %s",
+				i,
+				want,
+				results[i].Attributes["id"],
+			)
+		}
+	}
+}
