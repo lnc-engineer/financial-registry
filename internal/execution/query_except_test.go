@@ -289,3 +289,28 @@ func TestApplyExceptDeduplicatesRepeatedValuesOnBothSides(t *testing.T) {
 		t.Fatalf("expected first B context, got %s", results[1].Attributes["source"])
 	}
 }
+
+func TestApplyExceptWithMissingFieldOnLeft(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["name"] != "Alice" {
+		t.Fatalf("expected missing-id left context to be preserved")
+	}
+
+	if results[1].Attributes["id"] != "B" {
+		t.Fatalf("expected B, got %q", results[1].Attributes["id"])
+	}
+}
