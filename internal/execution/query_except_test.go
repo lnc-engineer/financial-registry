@@ -314,3 +314,168 @@ func TestApplyExceptWithMissingFieldOnLeft(t *testing.T) {
 		t.Fatalf("expected B, got %q", results[1].Attributes["id"])
 	}
 }
+
+func TestApplyExceptPreservesLeftResultOrder(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-003"}},
+		{Attributes: map[string]string{"id": "txn-001"}},
+		{Attributes: map[string]string{"id": "txn-004"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-004"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(result))
+	}
+
+	expected := []string{"txn-003", "txn-001", "txn-002"}
+
+	for i, ctx := range result {
+		if got := ctx.Attributes["id"]; got != expected[i] {
+			t.Fatalf("result[%d]: expected %q, got %q", i, expected[i], got)
+		}
+	}
+}
+
+func TestApplyExceptRemovesAllMatchingRows(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-001"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+		{Attributes: map[string]string{"id": "txn-003"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-001"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(result))
+	}
+
+	if got := result[0].Attributes["id"]; got != "txn-003" {
+		t.Fatalf("expected txn-003, got %q", got)
+	}
+}
+
+func TestApplyExceptIdenticalResultsReturnEmpty(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-001"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-001"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 0 {
+		t.Fatalf("expected empty result, got %d results", len(result))
+	}
+}
+
+func TestApplyExceptDisjointResultsPreserveLeftOrder(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-003"}},
+		{Attributes: map[string]string{"id": "txn-001"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-004"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(result))
+	}
+
+	expected := []string{"txn-003", "txn-001"}
+
+	for i, ctx := range result {
+		if got := ctx.Attributes["id"]; got != expected[i] {
+			t.Fatalf("result[%d]: expected %q, got %q", i, expected[i], got)
+		}
+	}
+}
+
+func TestApplyExceptEmptyLeftReturnsEmpty(t *testing.T) {
+	left := []ExecutionContext{}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-001"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 0 {
+		t.Fatalf("expected empty result, got %d results", len(result))
+	}
+}
+
+func TestApplyExceptEmptyRightPreservesLeft(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-003"}},
+		{Attributes: map[string]string{"id": "txn-001"}},
+	}
+
+	right := []ExecutionContext{}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != len(left) {
+		t.Fatalf("expected %d results, got %d", len(left), len(result))
+	}
+
+	for i := range left {
+		if got := result[i].Attributes["id"]; got != left[i].Attributes["id"] {
+			t.Fatalf(
+				"result[%d]: expected %q, got %q",
+				i,
+				left[i].Attributes["id"],
+				got,
+			)
+		}
+	}
+}
+
+func TestApplyExceptChainedOperations(t *testing.T) {
+	first := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-003"}},
+		{Attributes: map[string]string{"id": "txn-001"}},
+		{Attributes: map[string]string{"id": "txn-004"}},
+		{Attributes: map[string]string{"id": "txn-002"}},
+	}
+
+	second := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-001"}},
+	}
+
+	third := []ExecutionContext{
+		{Attributes: map[string]string{"id": "txn-004"}},
+	}
+
+	result := ApplyExcept(ApplyExcept(first, second, "id"), third, "id")
+
+	if len(result) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(result))
+	}
+
+	expected := []string{"txn-003", "txn-002"}
+
+	for i, ctx := range result {
+		if got := ctx.Attributes["id"]; got != expected[i] {
+			t.Fatalf("result[%d]: expected %q, got %q", i, expected[i], got)
+		}
+	}
+}
