@@ -479,3 +479,99 @@ func TestApplyExceptChainedOperations(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyExceptWithMissingFieldOnRight(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Unknown"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(result))
+	}
+
+	if got := result[0].Attributes["id"]; got != "B" {
+		t.Fatalf("expected B, got %q", got)
+	}
+}
+
+func TestApplyExceptMissingFieldMatchesMissingFieldOnRight(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Unknown"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	for _, ctx := range result {
+		if _, ok := ctx.Attributes["name"]; ok && ctx.Attributes["name"] == "Alice" {
+			t.Fatalf("expected missing-id left context to be excluded")
+		}
+	}
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(result))
+	}
+}
+
+func TestApplyExceptDeduplicatesMissingFieldValues(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"name": "Bob"}},
+		{Attributes: map[string]string{"id": "C"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(result))
+	}
+
+	if got := result[0].Attributes["name"]; got != "Alice" {
+		t.Fatalf("expected first result to preserve Alice, got %q", got)
+	}
+
+	if got := result[1].Attributes["id"]; got != "C" {
+		t.Fatalf("expected second result to be C, got %q", got)
+	}
+}
+
+func TestApplyExceptMissingFieldDoesNotAffectValidRightValues(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "B"}},
+		{Attributes: map[string]string{"id": "C"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	result := ApplyExcept(left, right, "id")
+
+	if len(result) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(result))
+	}
+
+	if _, ok := result[0].Attributes["name"]; !ok {
+		t.Fatalf("expected missing-id left context to be preserved")
+	}
+
+	if got := result[1].Attributes["id"]; got != "C" {
+		t.Fatalf("expected C, got %q", got)
+	}
+}
