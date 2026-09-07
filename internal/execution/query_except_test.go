@@ -575,3 +575,153 @@ func TestApplyExceptMissingFieldDoesNotAffectValidRightValues(t *testing.T) {
 		t.Fatalf("expected C, got %q", got)
 	}
 }
+
+func TestApplyExceptDeduplicatesMissingFieldsOnLeft(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"name": "Bob"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 distinct results, got %d", len(results))
+	}
+
+	if _, exists := results[0].Attributes["id"]; exists {
+		t.Fatal("expected first result to preserve missing id")
+	}
+
+	if results[0].Attributes["name"] != "Alice" {
+		t.Fatalf("expected Alice to be preserved, got %q", results[0].Attributes["name"])
+	}
+
+	if results[1].Attributes["id"] != "A" {
+		t.Fatalf("expected A, got %q", results[1].Attributes["id"])
+	}
+}
+
+func TestApplyExceptMissingFieldMatchesEmptyStringOnRight(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": ""}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "A" {
+		t.Fatalf("expected A, got %q", results[0].Attributes["id"])
+	}
+}
+
+func TestApplyExceptEmptyStringMatchesMissingFieldOnRight(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": ""}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Right"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "A" {
+		t.Fatalf("expected A, got %q", results[0].Attributes["id"])
+	}
+}
+
+func TestApplyExceptMissingFieldsOnBothSidesAreExcluded(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Bob"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "A" {
+		t.Fatalf("expected A, got %q", results[0].Attributes["id"])
+	}
+}
+
+func TestApplyExceptMissingFieldDeduplicatesWithNormalValues(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"name": "Alice"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"name": "Bob"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "C"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 distinct results, got %d", len(results))
+	}
+
+	if results[0].Attributes["name"] != "Alice" {
+		t.Fatalf("expected first result Alice, got %q", results[0].Attributes["name"])
+	}
+
+	if results[1].Attributes["id"] != "A" {
+		t.Fatalf("expected second result A, got %q", results[1].Attributes["id"])
+	}
+
+	if results[2].Attributes["id"] != "B" {
+		t.Fatalf("expected third result B, got %q", results[2].Attributes["id"])
+	}
+}
+
+func TestApplyExceptDeduplicatesExplicitEmptyStringValues(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": ""}},
+		{Attributes: map[string]string{"id": ""}},
+		{Attributes: map[string]string{"id": "A"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 distinct results, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "" {
+		t.Fatalf("expected first result to have empty id, got %q", results[0].Attributes["id"])
+	}
+
+	if results[1].Attributes["id"] != "A" {
+		t.Fatalf("expected second result A, got %q", results[1].Attributes["id"])
+	}
+}
