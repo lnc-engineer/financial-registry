@@ -725,3 +725,119 @@ func TestApplyExceptDeduplicatesExplicitEmptyStringValues(t *testing.T) {
 		t.Fatalf("expected second result A, got %q", results[1].Attributes["id"])
 	}
 }
+
+func TestApplyExceptEmptyRightDeduplicatesLeftValues(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "B"}},
+	}
+
+	results := ApplyExcept(left, []ExecutionContext{}, "id")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 distinct results, got %d", len(results))
+	}
+
+	expected := []string{"A", "B"}
+
+	for i, want := range expected {
+		if results[i].Attributes["id"] != want {
+			t.Fatalf(
+				"expected result %d to be %s, got %s",
+				i,
+				want,
+				results[i].Attributes["id"],
+			)
+		}
+	}
+}
+
+func TestApplyExceptWithBothSidesEmpty(t *testing.T) {
+	results := ApplyExcept(
+		[]ExecutionContext{},
+		[]ExecutionContext{},
+		"id",
+	)
+
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestApplyExceptEmptyRightPreservesFirstLeftContext(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Attributes: map[string]string{
+				"id":     "A",
+				"source": "first",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":     "A",
+				"source": "second",
+			},
+		},
+		{
+			Attributes: map[string]string{
+				"id":     "B",
+				"source": "third",
+			},
+		},
+	}
+
+	results := ApplyExcept(left, []ExecutionContext{}, "id")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Attributes["id"] != "A" {
+		t.Fatalf("expected first result A, got %q", results[0].Attributes["id"])
+	}
+
+	if results[0].Attributes["source"] != "first" {
+		t.Fatalf(
+			"expected first A context to be preserved, got %q",
+			results[0].Attributes["source"],
+		)
+	}
+
+	if results[1].Attributes["id"] != "B" {
+		t.Fatalf("expected second result B, got %q", results[1].Attributes["id"])
+	}
+}
+
+func TestApplyExceptNoMatchesPreservesCompleteLeftOrder(t *testing.T) {
+	left := []ExecutionContext{
+		{Attributes: map[string]string{"id": "D"}},
+		{Attributes: map[string]string{"id": "B"}},
+		{Attributes: map[string]string{"id": "A"}},
+		{Attributes: map[string]string{"id": "C"}},
+	}
+
+	right := []ExecutionContext{
+		{Attributes: map[string]string{"id": "X"}},
+		{Attributes: map[string]string{"id": "Y"}},
+	}
+
+	results := ApplyExcept(left, right, "id")
+
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+
+	expected := []string{"D", "B", "A", "C"}
+
+	for i, want := range expected {
+		if results[i].Attributes["id"] != want {
+			t.Fatalf(
+				"expected result %d to be %s, got %s",
+				i,
+				want,
+				results[i].Attributes["id"],
+			)
+		}
+	}
+}
