@@ -841,3 +841,136 @@ func TestApplyExceptNoMatchesPreservesCompleteLeftOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyExceptByTraceID(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			TraceID: "trace-A",
+			Attributes: map[string]string{
+				"id": "txn-001",
+			},
+		},
+		{
+			TraceID: "trace-B",
+			Attributes: map[string]string{
+				"id": "txn-002",
+			},
+		},
+		{
+			TraceID: "trace-C",
+			Attributes: map[string]string{
+				"id": "txn-003",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			TraceID: "trace-B",
+		},
+	}
+
+	results := ApplyExcept(left, right, "trace_id")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	expected := []string{"trace-A", "trace-C"}
+
+	for i, want := range expected {
+		if got := results[i].TraceID; got != want {
+			t.Fatalf("result[%d]: expected trace ID %q, got %q", i, want, got)
+		}
+	}
+}
+
+func TestApplyExceptBySpanName(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			SpanName: "ingest",
+			Attributes: map[string]string{
+				"id": "txn-001",
+			},
+		},
+		{
+			SpanName: "validate",
+			Attributes: map[string]string{
+				"id": "txn-002",
+			},
+		},
+		{
+			SpanName: "persist",
+			Attributes: map[string]string{
+				"id": "txn-003",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			SpanName: "validate",
+		},
+	}
+
+	results := ApplyExcept(left, right, "span_name")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	expected := []string{"ingest", "persist"}
+
+	for i, want := range expected {
+		if got := results[i].SpanName; got != want {
+			t.Fatalf("result[%d]: expected span name %q, got %q", i, want, got)
+		}
+	}
+
+	if results[0].Attributes["id"] != "txn-001" {
+		t.Fatalf("expected left context to be preserved, got %q", results[0].Attributes["id"])
+	}
+}
+
+func TestApplyExceptByStatus(t *testing.T) {
+	left := []ExecutionContext{
+		{
+			Status: "success",
+			Attributes: map[string]string{
+				"id": "txn-001",
+			},
+		},
+		{
+			Status: "failure",
+			Attributes: map[string]string{
+				"id": "txn-002",
+			},
+		},
+		{
+			Status: "pending",
+			Attributes: map[string]string{
+				"id": "txn-003",
+			},
+		},
+	}
+
+	right := []ExecutionContext{
+		{
+			Status: "failure",
+		},
+	}
+
+	results := ApplyExcept(left, right, "status")
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+
+	expected := []string{"success", "pending"}
+
+	for i, want := range expected {
+		if got := results[i].Status; got != want {
+			t.Fatalf("result[%d]: expected status %q, got %q", i, want, got)
+		}
+	}
+}
