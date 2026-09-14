@@ -33,3 +33,14 @@ func (r *Registry) Get(id string) (System, bool) {
 	system, exists := r.systems[id]
 	return system, exists
 }
+
+// List returns all systems currently registered.
+func (r *Registry) List() []System {
+	systems := make([]System, 0, len(r.systems))
+
+	for _, system := range r.systems {
+		systems = append(systems, system)
+	}
+
+	return systems
+}

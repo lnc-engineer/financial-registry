@@ -131,3 +131,133 @@ func TestRegistryGetReturnsFalseForUnknownID(t *testing.T) {
 		t.Fatalf("expected zero-value system, got %+v", system)
 	}
 }
+
+func TestRegistryListReturnsEmptyCollectionForEmptyRegistry(t *testing.T) {
+	registry := NewRegistry()
+
+	systems := registry.List()
+
+	if systems == nil {
+		t.Fatal("expected List to return an empty collection, got nil")
+	}
+
+	if len(systems) != 0 {
+		t.Fatalf("expected empty collection, got %d systems", len(systems))
+	}
+}
+
+func TestRegistryListReturnsRegisteredSystems(t *testing.T) {
+	registry := NewRegistry()
+
+	first := System{
+		ID:          "system-001",
+		Name:        "Payments Gateway",
+		Description: "External payments processing system",
+		Status:      SystemStatusActive,
+	}
+
+	second := System{
+		ID:          "system-002",
+		Name:        "Market Data Platform",
+		Description: "External market data system",
+		Status:      SystemStatusInactive,
+	}
+
+	if err := registry.Register(first); err != nil {
+		t.Fatalf("expected first registration to succeed, got %v", err)
+	}
+
+	if err := registry.Register(second); err != nil {
+		t.Fatalf("expected second registration to succeed, got %v", err)
+	}
+
+	systems := registry.List()
+
+	if len(systems) != 2 {
+		t.Fatalf("expected 2 systems, got %d", len(systems))
+	}
+
+	found := make(map[string]System)
+	for _, system := range systems {
+		found[system.ID] = system
+	}
+
+	if found[first.ID] != first {
+		t.Fatalf("expected first system %+v, got %+v", first, found[first.ID])
+	}
+
+	if found[second.ID] != second {
+		t.Fatalf("expected second system %+v, got %+v", second, found[second.ID])
+	}
+}
+
+func TestRegistryListReturnsSystemValuesWithoutMutatingRegistry(t *testing.T) {
+	registry := NewRegistry()
+
+	system := System{
+		ID:          "system-001",
+		Name:        "Payments Gateway",
+		Description: "External payments processing system",
+		Status:      SystemStatusActive,
+	}
+
+	if err := registry.Register(system); err != nil {
+		t.Fatalf("expected registration to succeed, got %v", err)
+	}
+
+	systems := registry.List()
+
+	if len(systems) != 1 {
+		t.Fatalf("expected 1 system, got %d", len(systems))
+	}
+
+	systems[0].Name = "Modified Gateway"
+
+	registered, exists := registry.Get("system-001")
+	if !exists {
+		t.Fatal("expected registered system to be found")
+	}
+
+	if registered.Name != "Payments Gateway" {
+		t.Fatalf("expected registry to retain original name, got %q", registered.Name)
+	}
+}
+
+func TestRegistryListReturnsIndependentCollection(t *testing.T) {
+	registry := NewRegistry()
+
+	system := System{
+		ID:     "system-001",
+		Name:   "Payments Gateway",
+		Status: SystemStatusActive,
+	}
+
+	if err := registry.Register(system); err != nil {
+		t.Fatalf("expected registration to succeed, got %v", err)
+	}
+
+	systems := registry.List()
+
+	if len(systems) != 1 {
+		t.Fatalf("expected 1 system, got %d", len(systems))
+	}
+
+	systems[0] = System{
+		ID:     "system-999",
+		Name:   "Modified System",
+		Status: SystemStatusInactive,
+	}
+
+	if len(registry.List()) != 1 {
+		t.Fatalf("expected registry to still contain 1 system, got %d", len(registry.List()))
+	}
+
+	registered, exists := registry.Get("system-001")
+	if !exists {
+		t.Fatal("expected original system to remain registered")
+	}
+
+	if registered != system {
+		t.Fatalf("expected original system %+v, got %+v", system, registered)
+	}
+}
