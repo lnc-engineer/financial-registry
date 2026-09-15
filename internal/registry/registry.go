@@ -44,3 +44,16 @@ func (r *Registry) List() []System {
 
 	return systems
 }
+
+// ListByStatus returns all registered systems with the requested status.
+func (r *Registry) ListByStatus(status SystemStatus) []System {
+	systems := make([]System, 0)
+
+	for _, system := range r.systems {
+		if system.Status == status {
+			systems = append(systems, system)
+		}
+	}
+
+	return systems
+}

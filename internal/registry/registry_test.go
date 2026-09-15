@@ -261,3 +261,119 @@ func TestRegistryListReturnsIndependentCollection(t *testing.T) {
 		t.Fatalf("expected original system %+v, got %+v", system, registered)
 	}
 }
+
+func TestRegistryListByStatusReturnsMatchingSystems(t *testing.T) {
+	registry := NewRegistry()
+
+	active := System{
+		ID:     "system-001",
+		Name:   "Payments Gateway",
+		Status: SystemStatusActive,
+	}
+
+	inactive := System{
+		ID:     "system-002",
+		Name:   "Market Data Platform",
+		Status: SystemStatusInactive,
+	}
+
+	secondActive := System{
+		ID:     "system-003",
+		Name:   "Risk Analytics Platform",
+		Status: SystemStatusActive,
+	}
+
+	if err := registry.Register(active); err != nil {
+		t.Fatalf("expected active system registration to succeed, got %v", err)
+	}
+
+	if err := registry.Register(inactive); err != nil {
+		t.Fatalf("expected inactive system registration to succeed, got %v", err)
+	}
+
+	if err := registry.Register(secondActive); err != nil {
+		t.Fatalf("expected second active system registration to succeed, got %v", err)
+	}
+
+	systems := registry.ListByStatus(SystemStatusActive)
+
+	if len(systems) != 2 {
+		t.Fatalf("expected 2 active systems, got %d", len(systems))
+	}
+
+	found := make(map[string]System)
+	for _, system := range systems {
+		found[system.ID] = system
+	}
+
+	if found[active.ID] != active {
+		t.Fatalf("expected active system %+v, got %+v", active, found[active.ID])
+	}
+
+	if found[secondActive.ID] != secondActive {
+		t.Fatalf("expected second active system %+v, got %+v", secondActive, found[secondActive.ID])
+	}
+
+	if _, exists := found[inactive.ID]; exists {
+		t.Fatalf("did not expect inactive system %q in active results", inactive.ID)
+	}
+}
+
+func TestRegistryListByStatusReturnsEmptyCollectionWhenNoSystemsMatch(t *testing.T) {
+	registry := NewRegistry()
+
+	system := System{
+		ID:     "system-001",
+		Name:   "Payments Gateway",
+		Status: SystemStatusActive,
+	}
+
+	if err := registry.Register(system); err != nil {
+		t.Fatalf("expected registration to succeed, got %v", err)
+	}
+
+	systems := registry.ListByStatus(SystemStatusInactive)
+
+	if systems == nil {
+		t.Fatal("expected ListByStatus to return an empty collection, got nil")
+	}
+
+	if len(systems) != 0 {
+		t.Fatalf("expected no inactive systems, got %d", len(systems))
+	}
+}
+
+func TestRegistryListByStatusReturnsIndependentCollection(t *testing.T) {
+	registry := NewRegistry()
+
+	system := System{
+		ID:     "system-001",
+		Name:   "Payments Gateway",
+		Status: SystemStatusActive,
+	}
+
+	if err := registry.Register(system); err != nil {
+		t.Fatalf("expected registration to succeed, got %v", err)
+	}
+
+	systems := registry.ListByStatus(SystemStatusActive)
+
+	if len(systems) != 1 {
+		t.Fatalf("expected 1 active system, got %d", len(systems))
+	}
+
+	systems[0] = System{
+		ID:     "system-999",
+		Name:   "Modified System",
+		Status: SystemStatusInactive,
+	}
+
+	registered, exists := registry.Get(system.ID)
+	if !exists {
+		t.Fatal("expected original system to remain registered")
+	}
+
+	if registered != system {
+		t.Fatalf("expected original system %+v, got %+v", system, registered)
+	}
+}
