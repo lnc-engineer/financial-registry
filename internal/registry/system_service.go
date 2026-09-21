@@ -14,6 +14,10 @@ func NewSystemService(repository SystemRepository) *SystemService {
 
 // Register registers a system through the configured repository.
 func (s *SystemService) Register(system System) error {
+	if err := system.Validate(); err != nil {
+		return err
+	}
+
 	return s.repository.Register(system)
 }
 

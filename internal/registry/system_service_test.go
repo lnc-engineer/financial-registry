@@ -86,6 +86,79 @@ func TestSystemServiceRegisterDelegatesToRepository(t *testing.T) {
 	}
 }
 
+func TestSystemServiceRegisterValidatesBeforeRepository(t *testing.T) {
+	repository := &fakeSystemRepository{}
+
+	service := NewSystemService(repository)
+
+	system := System{
+		ID:     "",
+		Name:   "Payments Gateway",
+		Status: SystemStatusActive,
+	}
+
+	err := service.Register(system)
+
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+
+	if repository.registerCalled {
+		t.Fatal("expected repository Register not to be called")
+	}
+}
+
+func TestSystemServiceRegisterRejectsMissingName(t *testing.T) {
+	repository := &fakeSystemRepository{}
+
+	service := NewSystemService(repository)
+
+	system := System{
+		ID:     "system-001",
+		Status: SystemStatusActive,
+	}
+
+	err := service.Register(system)
+
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+
+	if err.Error() != "system name is required" {
+		t.Fatalf("expected name validation error, got %v", err)
+	}
+
+	if repository.registerCalled {
+		t.Fatal("expected repository Register not to be called")
+	}
+}
+
+func TestSystemServiceRegisterRejectsInvalidStatus(t *testing.T) {
+	repository := &fakeSystemRepository{}
+
+	service := NewSystemService(repository)
+
+	system := System{
+		ID:     "system-001",
+		Name:   "Payments Gateway",
+		Status: SystemStatus("unknown"),
+	}
+
+	err := service.Register(system)
+
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+
+	if err.Error() != `invalid system status: "unknown"` {
+		t.Fatalf("expected status validation error, got %v", err)
+	}
+
+	if repository.registerCalled {
+		t.Fatal("expected repository Register not to be called")
+	}
+}
+
 func TestSystemServiceRegisterReturnsRepositoryError(t *testing.T) {
 	repository := &fakeSystemRepository{
 		registerErr: errRepositoryFailure,
