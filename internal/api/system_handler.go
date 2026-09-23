@@ -9,11 +9,11 @@ import (
 
 // SystemHandler handles HTTP requests for registered systems.
 type SystemHandler struct {
-	service *registry.SystemService
+	service systemService
 }
 
 // NewSystemHandler creates a system HTTP handler using the provided service.
-func NewSystemHandler(service *registry.SystemService) *SystemHandler {
+func NewSystemHandler(service systemService) *SystemHandler {
 	return &SystemHandler{
 		service: service,
 	}
