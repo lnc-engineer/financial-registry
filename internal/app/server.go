@@ -9,3 +9,8 @@ func NewHTTPServer(addr string) *http.Server {
 		Handler: NewHTTPHandler(),
 	}
 }
+
+// NewConfiguredHTTPServer creates an HTTP server using application configuration.
+func NewConfiguredHTTPServer(cfg Config) *http.Server {
+	return NewHTTPServer(cfg.HTTPAddr)
+}
